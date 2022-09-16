@@ -2,7 +2,7 @@ name: Pulumi
 on:
   push:
     branches:
-      - master
+      - aws-infra-init
 jobs:
   up:
     name: Preview
