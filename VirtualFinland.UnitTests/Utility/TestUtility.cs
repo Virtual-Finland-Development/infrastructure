@@ -41,7 +41,7 @@ public static class TestUtility
         // TODO: Is there a better way to use Pulumi configs in unit tests
         var configJson = @"
         { 
-            ""project:environment"": ""dev"",
+            ""project:environment"": ""prod"",
             ""project:dbName"": ""databasename"",
             ""project:dbAdmin"": ""admin"",
             ""project:name"": ""Virtual Finland""

@@ -53,5 +53,14 @@ namespace VirtualFinland.Infrastructure.Testing.Tests
             dbClustersInstances.Should().NotBeNull();
             dbClustersInstances.Should().ContainSingle(o => o.InstanceClass.GetValueAsync().Result == "db.serverless");
         }
+
+        [Test]
+        public async Task ShouldNotSkipFinalSnapshotForAuroraCluster()
+        {
+            var resources = await TestUtility.RunAsync<MainStack>();
+            var dbClusters = resources.OfType<Cluster>().ToList();
+
+            dbClusters.Should().ContainSingle(o => o.SkipFinalSnapshot.GetValueAsync().Result == false, "should not skip final snapshot for production safety measures");
+        }
     }
 }

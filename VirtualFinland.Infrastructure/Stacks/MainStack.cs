@@ -4,6 +4,7 @@ using Pulumi.Aws.Rds;
 using Pulumi.Aws.Rds.Inputs;
 using Pulumi.Awsx.Ec2;
 using Pulumi.Random;
+using VirtualFinland.Infrastructure.Common;
 
 namespace VirtualFinland.Infrastructure.Stacks;
 
@@ -13,6 +14,7 @@ public class MainStack : Stack
     {
 
         var config = new Config();
+        bool isProductionEnvironment = config.Require("environment") == Environments.Prod.ToString().ToLowerInvariant();
          InputMap<string> tags = new InputMap<string>()
          {
             { "Environment", config.Require("environment") },
@@ -46,7 +48,7 @@ public class MainStack : Stack
             DatabaseName = config.Require("dbName"),
             MasterUsername = config.Require("dbAdmin"),
             MasterPassword = password.Result,
-            SkipFinalSnapshot = true, // This is only for a dev situation, for production needs planning if true or not, for data safety sould be set to false in prod, for pulumi resources destroy in DEV testing?
+            SkipFinalSnapshot = !isProductionEnvironment, // For production set to FALSE to avoid accidental deletion of the cluster, data safety measure and is the default for AWS.
             DbSubnetGroupName = dbSubNetGroup.Name,
             Serverlessv2ScalingConfiguration = new ClusterServerlessv2ScalingConfigurationArgs
             {
