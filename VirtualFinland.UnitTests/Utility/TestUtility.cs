@@ -1,9 +1,9 @@
-namespace VirtualFinland.Infrastructure.Testing.Utility;
-
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Pulumi;
 using Pulumi.Testing;
+
+namespace VirtualFinland.UnitTests.Utility;
 
 class Mocks : IMocks
 {
@@ -43,7 +43,8 @@ public static class TestUtility
         { 
             ""project:environment"": ""dev"",
             ""project:dbName"": ""databasename"",
-            ""project:dbAdmin"": ""admin""
+            ""project:dbAdmin"": ""admin"",
+            ""project:name"": ""Virtual Finland""
         }";
 
         System.Environment.SetEnvironmentVariable("PULUMI_CONFIG", configJson);

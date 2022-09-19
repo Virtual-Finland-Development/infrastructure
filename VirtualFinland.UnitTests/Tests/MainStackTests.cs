@@ -8,7 +8,7 @@ using Pulumi.Aws.Rds;
 using Pulumi.Awsx.Ec2;
 using Pulumi.Testing;
 using VirtualFinland.Infrastructure.Stacks;
-using VirtualFinland.Infrastructure.Testing.Utility;
+using VirtualFinland.UnitTests.Utility;
 
 namespace VirtualFinland.Infrastructure.Testing.Tests
 {
