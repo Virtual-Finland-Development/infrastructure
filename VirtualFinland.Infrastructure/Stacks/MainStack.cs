@@ -27,7 +27,7 @@ public class MainStack : Stack
 
         var dbSubNetGroup = new SubnetGroup("dbsubnets", new()
         {
-            SubnetIds = vpc.PublicSubnetIds,
+            SubnetIds = isProductionEnvironment ? vpc.PrivateSubnetIds : vpc.PublicSubnetIds, // DEV: Set a public subnet for dev purposes, otherwise use a prive one for prod
         });
 
         var password = new RandomPassword("password", new()
@@ -41,14 +41,14 @@ public class MainStack : Stack
         {
             ClusterIdentifier = $"vf-{config.Require("environment")}",
 
-            EnableHttpEndpoint = true,
+            EnableHttpEndpoint = !isProductionEnvironment, // DEV: Set to true only for dev purposes for public access non-prod situations
             Engine = "aurora-postgresql",
             EngineMode = "provisioned",
             EngineVersion = "13.7",
             DatabaseName = config.Require("dbName"),
             MasterUsername = config.Require("dbAdmin"),
             MasterPassword = password.Result,
-            SkipFinalSnapshot = !isProductionEnvironment, // For production set to FALSE to avoid accidental deletion of the cluster, data safety measure and is the default for AWS.
+            SkipFinalSnapshot = !isProductionEnvironment, // DEV: For production set to FALSE to avoid accidental deletion of the cluster, data safety measure and is the default for AWS.
             DbSubnetGroupName = dbSubNetGroup.Name,
             Serverlessv2ScalingConfiguration = new ClusterServerlessv2ScalingConfigurationArgs
             {

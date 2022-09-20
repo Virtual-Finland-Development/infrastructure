@@ -60,7 +60,7 @@ namespace VirtualFinland.Infrastructure.Testing.Tests
             var resources = await TestUtility.RunAsync<MainStack>();
             var dbClusters = resources.OfType<Cluster>().ToList();
 
-            dbClusters.Should().ContainSingle(o => o.SkipFinalSnapshot.GetValueAsync().Result == false, "should not skip final snapshot for production safety measures");
+            dbClusters.Should().ContainSingle(o => o.SkipFinalSnapshot.GetValueAsync().Result == false, "should not skip final snapshot for production, safety measure");
         }
     }
 }
