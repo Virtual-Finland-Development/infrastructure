@@ -1,6 +1,4 @@
 config:
   aws:region: eu-north-1
-  infrastructure:dbAdmin: vfadmin
-  infrastructure:dbName: main
   infrastructure:environment: dev
   infrastructure:name: Virtual Finland
