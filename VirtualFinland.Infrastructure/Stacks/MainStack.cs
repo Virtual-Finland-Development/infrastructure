@@ -14,7 +14,7 @@ public class MainStack : Stack
     {
 
         var config = new Config();
-        bool isProductionEnvironment = config.Require("environment") == Environments.Prod.ToString().ToLowerInvariant();
+
         InputMap<string> tags = new InputMap<string>()
          {
             { "Environment", config.Require("environment") },
