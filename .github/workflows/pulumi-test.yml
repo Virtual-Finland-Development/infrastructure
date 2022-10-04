@@ -5,7 +5,7 @@ on:
 
 jobs:
   preview:
-    name: Preview
+    name: Test Pulumi Configurations
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
