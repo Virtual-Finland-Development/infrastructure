@@ -3,7 +3,7 @@ name: Deploy Pulumi Configurations
 on:
   push:
     branches:
-      - aws-infra-init
+      - main
 
 jobs:
   deploy:
