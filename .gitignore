@@ -353,3 +353,6 @@ MigrationBackup/
 .vscode/
 
 .ds_store
+
+# Jetbrains Rider
+.idea/
