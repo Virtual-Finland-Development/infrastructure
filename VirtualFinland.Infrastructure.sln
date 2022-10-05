@@ -5,7 +5,7 @@ VisualStudioVersion = 25.0.1703.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualFinland.Infrastructure", "VirtualFinland.Infrastructure\VirtualFinland.Infrastructure.csproj", "{7CE8C015-EB0D-4D49-8CB7-695144514E56}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualFinland.UnitTests", "VirtualFinland.UnitTests\VirtualFinland.UnitTests.csproj", "{8DE048AB-A7DF-447D-BC6D-911F353B7413}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VirtualFinland.Infrastructure.UnitTests", "VirtualFinland.Infrastructure.UnitTests\VirtualFinland.Infrastructure.UnitTests.csproj", "{8DE048AB-A7DF-447D-BC6D-911F353B7413}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

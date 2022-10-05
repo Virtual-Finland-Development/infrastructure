@@ -13,7 +13,7 @@ jobs:
         with:
           dotnet-version: 6.0.x
       - name: Pulumi Configurations Unit Tests
-        run: dotnet test ./VirtualFinland.UnitTests --no-restore
+        run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v1
         with: 
