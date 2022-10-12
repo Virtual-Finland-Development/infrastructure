@@ -26,11 +26,6 @@ public class MainStack : Stack
             Tags = tags,
             EnableDnsHostnames = true
         });
-        
-        var dbSubNetGroup = new SubnetGroup("dbsubnets", new()
-        {
-            SubnetIds = vpc.PrivateSubnetIds, 
-        });
 
         this.VpcId = vpc.VpcId;
         this.VpcName = Output.Create(vpc.GetResourceName());
