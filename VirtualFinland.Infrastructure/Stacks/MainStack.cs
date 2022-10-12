@@ -23,14 +23,23 @@ public class MainStack : Stack
 
         var vpc = new Vpc($"vf-vpc-{config.Require("environment")}", new VpcArgs()
         {
-            Tags = tags
+            Tags = tags,
+            EnableDnsHostnames = true
+        });
+        
+        var dbSubNetGroup = new SubnetGroup("dbsubnets", new()
+        {
+            SubnetIds = vpc.PrivateSubnetIds, 
         });
 
         this.VpcId = vpc.VpcId;
+        this.VpcName = Output.Create(vpc.GetResourceName());
         this.PublicSubnetIds = vpc.PublicSubnetIds;
         this.PrivateSubnetIds = vpc.PrivateSubnetIds;
     }
     [Output] public Output<string> VpcId { get; set; }
+    
+    [Output] public Output<string> VpcName { get; set; }
 
     [Output] public Output<ImmutableArray<string>> PrivateSubnetIds { get; set; }
     [Output] public Output<ImmutableArray<string>> PublicSubnetIds { get; set; }
