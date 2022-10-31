@@ -21,7 +21,7 @@ public class MainStack : Stack
         InputMap<string> tags = new InputMap<string>()
         {
             {
-                "Environment", config.Require("environment")
+                "Environment", Pulumi.Deployment.Instance.StackName
             },
             {
                 "Project", config.Require("name")
