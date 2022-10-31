@@ -1,4 +1,4 @@
 config:
   aws:region: eu-north-1
-  infrastructure:environment: dev
+  infrastructure:environment: staging
   infrastructure:name: Virtual Finland
