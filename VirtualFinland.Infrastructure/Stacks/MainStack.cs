@@ -15,7 +15,7 @@ public class MainStack : Stack
     {
         var config = new Config();
         
-        bool isProductionEnvironment = config.Require("environment") == Environments.Prod.ToString().ToLowerInvariant();
+        bool isProductionEnvironment = Pulumi.Deployment.Instance.StackName == Environments.Prod.ToString().ToLowerInvariant();
 
 
         InputMap<string> tags = new InputMap<string>()
