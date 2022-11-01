@@ -1,0 +1,42 @@
+name: Manually deploy to selected environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      env:
+        type: string
+        required: true
+        description: Environment where to deploy the stack
+        options:
+          - dev
+          - staging
+        default: dev
+
+env:
+  STACK_ENVIRONMENT: ${{ github.event.inputs.env }}
+
+jobs:
+  deploy:
+    name: Deploy to AWS dev environment
+    environment: $STACK_ENVIRONMENT
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+      - name: Pulumi Configurations Unit Tests
+        run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1-node16
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-region: ${{ secrets.AWS_REGION }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      - uses: pulumi/actions@v3
+        with: 
+          work-dir: ./VirtualFinland.Infrastructure
+          command: up
+          stack-name: ${{ secrets.PULUMI_ORGANIZATION }}/$STACK_ENVIRONMENT
+        env:
+          PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN}}
