@@ -16,7 +16,7 @@ public class MainStack : Stack
         var config = new Config();
         
         bool isProductionEnvironment = Pulumi.Deployment.Instance.StackName == Environments.Prod.ToString().ToLowerInvariant();
-
+        var environment = Pulumi.Deployment.Instance.StackName;
 
         InputMap<string> tags = new InputMap<string>()
         {
@@ -24,11 +24,11 @@ public class MainStack : Stack
                 "Environment", Pulumi.Deployment.Instance.StackName
             },
             {
-                "Project", config.Require("name")
+                "Project", Pulumi.Deployment.Instance.ProjectName
             }
         };
 
-        var vpc = new Vpc($"vf-vpc-{config.Require("environment")}", new VpcArgs()
+        var vpc = new Vpc($"vf-vpc-{environment}", new VpcArgs()
         {
             Tags = tags,
             EnableDnsHostnames = true,
