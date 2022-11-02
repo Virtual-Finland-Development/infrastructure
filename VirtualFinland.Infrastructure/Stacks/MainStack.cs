@@ -17,14 +17,15 @@ public class MainStack : Stack
         
         bool isProductionEnvironment = Pulumi.Deployment.Instance.StackName == Environments.Prod.ToString().ToLowerInvariant();
         var environment = Pulumi.Deployment.Instance.StackName;
+        var projectName = Pulumi.Deployment.Instance.ProjectName;
 
         InputMap<string> tags = new InputMap<string>()
         {
             {
-                "Environment", Pulumi.Deployment.Instance.StackName
+                "Environment", environment
             },
             {
-                "Project", Pulumi.Deployment.Instance.ProjectName
+                "Project", projectName
             }
         };
 
