@@ -3,22 +3,18 @@ name: Manually deploy to selected environment
 on:
   workflow_dispatch:
     inputs:
-      env:
-        type: string
+      environment:
+        description: Environment where to deploy the stack (dev, staging)
+        type: environment
         required: true
-        description: Environment where to deploy the stack
-        options:
-          - dev
-          - staging
-        default: dev
 
 env:
-  STACK_ENVIRONMENT: ${{ github.event.inputs.env }}
+  PULUMI_STACK: dev
 
 jobs:
   deploy:
-    name: Deploy to AWS dev environment
-    environment: $STACK_ENVIRONMENT
+    name: Deploy to AWS ${{ inputs.environment }} environment
+    environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -37,6 +33,6 @@ jobs:
         with: 
           work-dir: ./VirtualFinland.Infrastructure
           command: up
-          stack-name: ${{ secrets.PULUMI_ORGANIZATION }}/$STACK_ENVIRONMENT
+          stack-name: ${{ secrets.PULUMI_ORGANIZATION }}/${{ inputs.environment }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN}}
