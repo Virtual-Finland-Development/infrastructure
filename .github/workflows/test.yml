@@ -14,6 +14,8 @@ jobs:
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 7.0.x
+      - name: Build Stack Features
+        run: make -s -C ./VirtualFinland.KeyRotator build
       - name: Pulumi Configurations Unit Tests
         run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
       - name: Configure AWS credentials
