@@ -5,6 +5,7 @@ using Pulumi.Aws.CloudWatch;
 using Pulumi.Aws.CloudWatch.Inputs;
 using Pulumi.Aws.Iam;
 using Pulumi.Aws.Lambda;
+using Pulumi.Aws.Lambda.Inputs;
 
 namespace VirtualFinland.Infrastructure.Stacks.Features;
 
@@ -15,20 +16,20 @@ public class KeyRotator
 {
     public User InitializeCICDBotUser(string environment, InputMap<string> tags)
     {
-        var cicdUser = new User($"cicd-bot-user-{environment}", new UserArgs()
+        var botUser = new User($"cicd-bot-user-{environment}", new UserArgs()
         {
             Tags = tags,
             ForceDestroy = true
         });
-        var cicdUserGroup = new Group($"cicd-bots-group-{environment}", new GroupArgs()
+        var botUserGroup = new Group($"cicd-bots-group-{environment}", new GroupArgs()
         {
         });
-        var cicdUserGroupMembership = new GroupMembership($"cicd-bots-group-membership-{environment}", new GroupMembershipArgs()
+        var botUserGroupMembership = new GroupMembership($"cicd-bots-group-membership-{environment}", new GroupMembershipArgs()
         {
-            Group = cicdUserGroup.Name,
+            Group = botUserGroup.Name,
             Users = new InputList<string>()
             {
-                cicdUser.Name
+                botUser.Name
             }
         });
 
@@ -36,7 +37,7 @@ public class KeyRotator
 
         var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
-            Group = cicdUserGroup.Name,
+            Group = botUserGroup.Name,
             Policy = JsonSerializer.Serialize(new Dictionary<string, object?>
             {
                 { "Version", "2012-10-17" },
@@ -57,7 +58,7 @@ public class KeyRotator
             })
         });
 
-        return cicdUser;
+        return botUser;
     }
 
     public void InitializeRotatorLambdaScheduler(User botUser, string environment, InputMap<string> tags)
@@ -140,13 +141,22 @@ public class KeyRotator
             Timeout = 30,
             MemorySize = 128,
             Code = new FileArchive(artifactPath),
-            Tags = tags
+            Tags = tags,
+            Environment = new FunctionEnvironmentArgs
+            {
+                Variables =
+                {
+                    { "CICD_BOT_IAM_USER_NAME", botUser.Name },
+                    { "ENVIRONMENT", environment },
+                }
+            },
         });
         var schedulerRule = new EventRule($"cicd-key-rotator-schedule-{environment}", new EventRuleArgs
         {
             Description = "Schedule key rotations",
             ScheduleExpression = "cron(30 5 * * ? *)",
             Tags = tags,
+
         });
         new EventTarget($"cicd-key-rotator-target-{environment}", new EventTargetArgs
         {
