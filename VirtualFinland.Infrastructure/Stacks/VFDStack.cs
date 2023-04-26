@@ -3,15 +3,16 @@ using Pulumi;
 using Pulumi.Awsx.Ec2;
 using Pulumi.Awsx.Ec2.Inputs;
 using VirtualFinland.Infrastructure.Common;
+using VirtualFinland.Infrastructure.Stacks.Features;
 
 namespace VirtualFinland.Infrastructure.Stacks;
 
 //
 // VPC for protected network resources like users-api database
 //
-public class VPCStack : Stack
+public class VFDStack : Stack
 {
-    public VPCStack()
+    public VFDStack()
     {
         var config = new Config();
 
@@ -43,6 +44,11 @@ public class VPCStack : Stack
         this.VpcName = Output.Create(vpc.GetResourceName());
         this.PublicSubnetIds = vpc.PublicSubnetIds;
         this.PrivateSubnetIds = vpc.PrivateSubnetIds;
+
+        // Setup key rotator
+        var keyRotator = new KeyRotator();
+        var botUser = keyRotator.InitializeCICDBotUser(environment, tags);
+        keyRotator.InitializeRotatorLambdaScheduler(botUser, environment, tags);
     }
     [Output] public Output<string> VpcId { get; set; }
 

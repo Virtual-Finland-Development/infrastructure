@@ -6,34 +6,14 @@ using Pulumi.Aws.CloudWatch.Inputs;
 using Pulumi.Aws.Iam;
 using Pulumi.Aws.Lambda;
 
-namespace VirtualFinland.Infrastructure.Stacks;
+namespace VirtualFinland.Infrastructure.Stacks.Features;
 
 //
 // IAM user for CI/CD pipelines
 //
-public class KeyRotatorStack : Stack
+public class KeyRotator
 {
-    public KeyRotatorStack()
-    {
-        var environment = Pulumi.Deployment.Instance.StackName;
-        var projectName = Pulumi.Deployment.Instance.ProjectName;
-
-        InputMap<string> tags = new InputMap<string>()
-        {
-            {
-                "Environment", environment
-            },
-            {
-                "Project", projectName
-            }
-        };
-
-
-        var botUser = InitializeCICDBotUser(environment, tags);
-        InitializeRotatorLambdaScheduler(botUser, environment, tags);
-    }
-
-    User InitializeCICDBotUser(string environment, InputMap<string> tags)
+    public User InitializeCICDBotUser(string environment, InputMap<string> tags)
     {
         var cicdUser = new User($"cicd-bot-user-{environment}", new UserArgs()
         {
@@ -80,7 +60,7 @@ public class KeyRotatorStack : Stack
         return cicdUser;
     }
 
-    void InitializeRotatorLambdaScheduler(User botUser, string environment, InputMap<string> tags)
+    public void InitializeRotatorLambdaScheduler(User botUser, string environment, InputMap<string> tags)
     {
         //
         // Setup roles and policies
