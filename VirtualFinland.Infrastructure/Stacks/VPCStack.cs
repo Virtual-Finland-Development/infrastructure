@@ -1,20 +1,20 @@
 using System.Collections.Immutable;
 using Pulumi;
-using Pulumi.Aws.Rds;
-using Pulumi.Aws.Rds.Inputs;
 using Pulumi.Awsx.Ec2;
 using Pulumi.Awsx.Ec2.Inputs;
-using Pulumi.Random;
 using VirtualFinland.Infrastructure.Common;
 
 namespace VirtualFinland.Infrastructure.Stacks;
 
-public class MainStack : Stack
+//
+// VPC for protected network resources like users-api database
+//
+public class VPCStack : Stack
 {
-    public MainStack()
+    public VPCStack()
     {
         var config = new Config();
-        
+
         bool isProductionEnvironment = Pulumi.Deployment.Instance.StackName == Environments.Prod.ToString().ToLowerInvariant();
         var environment = Pulumi.Deployment.Instance.StackName;
         var projectName = Pulumi.Deployment.Instance.ProjectName;
