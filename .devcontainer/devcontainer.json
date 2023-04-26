@@ -3,7 +3,21 @@
 {
 	"name": "C# (.NET)",
 	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/dotnet:0-7.0"
+	"image": "mcr.microsoft.com/devcontainers/dotnet:0-7.0",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		// Configure properties specific to VS Code.
+		"vscode": {
+		  // Set *default* container specific settings.json values on container create.
+		  "settings": {
+			"editor.formatOnSave": true
+		  },
+	
+		  // Add the IDs of extensions you want installed when the container is created.
+		  "extensions": ["ms-dotnettools.csharp", "leo-labs.dotnet", "matijarmk.dotnet-core-commands"]
+		}
+	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
 	// "features": {},
