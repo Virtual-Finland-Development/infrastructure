@@ -19,27 +19,40 @@ public class Function
         if (newKey != null)
         {
             // Publish new key to the pipelines
-            credentialsPublisher.PublishAccessKey(newKey);
+            credentialsPublisher.PublishAccessKey(newKey, inputArgs.Environment);
         }
     }
 
     InputArgs ParseInputArgs(string input, ILambdaContext context)
     {
-        context.Logger.LogLine($"Raw input: {input}");
-        var inputObject = JsonSerializer.Deserialize<InputArgs>(input);
-        if (inputObject == null)
+        var inputObject = new InputArgs();
+
+        if (!string.IsNullOrEmpty(input))
         {
-            inputObject = new InputArgs();
+            context.Logger.LogLine($"Raw input: {input}");
+            var parsedInput = JsonSerializer.Deserialize<InputArgs>(input);
+            if (parsedInput != null)
+            {
+                inputObject = parsedInput;
+            }
         }
 
         if (string.IsNullOrEmpty(inputObject.IAMUserName))
         {
-            inputObject.IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME");
+            inputObject.IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty;
         }
-
         if (string.IsNullOrEmpty(inputObject.IAMUserName))
         {
             throw new ArgumentException("IAMUserName not defined");
+        }
+
+        if (string.IsNullOrEmpty(inputObject.Environment))
+        {
+            inputObject.Environment = Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty;
+        }
+        if (string.IsNullOrEmpty(inputObject.Environment))
+        {
+            throw new ArgumentException("Environment not defined");
         }
 
         return inputObject;
@@ -48,5 +61,6 @@ public class Function
 
 public record InputArgs
 {
-    public string? IAMUserName { get; set; }
+    public string IAMUserName { get; set; } = string.Empty;
+    public string Environment { get; set; } = string.Empty;
 }

@@ -16,20 +16,27 @@ namespace VirtualFinland.KeyRotator.Services.Github;
 
 public class GitHubService
 {
-    public async Task<GitHubClient> GetGithubClient()
+    HttpClient? _httpClient;
+
+
+    public async Task CreateOrUpdateEnvironmentSecret(string organizationName, string repositoryName, string environment, string secretName, string secretValue)
     {
-        var githubClient = new GitHubClient(new ProductHeaderValue("Virtual-Finland-Development"));
-        var token = await GetGithubAccessToken();
-        var tokenAuth = new Credentials(token);
-        githubClient.Credentials = tokenAuth;
-        return githubClient;
+        // https://docs.github.com/en/rest/repos/repos?apiVersion=2022-11-28#get-a-repository
+        var repositoryId = (await getGithubResponsePayloadItem($"/repos/{organizationName}/{repositoryName}", new List<string> { "id" })).FirstOrDefault() ?? "";
+        // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
+        var publicKeyPackage = await getGithubResponsePayloadItem($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key", new List<string> { "key_id", "key", });
+        var secret = GetSecretForCreate(secretValue, new SecretsPublicKey(publicKeyPackage[0], publicKeyPackage[1]));
+        // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
+        var githubClient = await getGithubAPIClient();
+        await githubClient.PostAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/{secretName}", new StringContent(JsonSerializer.Serialize(secret), Encoding.UTF8, "application/json"));
     }
+
 
     //
     // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
     // @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
     //
-    public UpsertRepositorySecret GetSecretForCreate(string secretValue, SecretsPublicKey key)
+    UpsertRepositorySecret GetSecretForCreate(string secretValue, SecretsPublicKey key)
     {
         var secretBytes = Encoding.UTF8.GetBytes(secretValue);
         var publicKey = Convert.FromBase64String(key.Key);
@@ -43,6 +50,35 @@ public class GitHubService
         };
 
         return upsertValue;
+    }
+
+    async Task<HttpClient> getGithubAPIClient()
+    {
+        if (_httpClient == null)
+        {
+            // Setup HttpClient with default headers for github api
+            _httpClient = new HttpClient();
+            _httpClient.BaseAddress = new Uri("https://api.github.com");
+            _httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+            _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", "VirtualFinland.KeyRotator");
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetGithubAccessToken()}");
+        }
+        return _httpClient;
+    }
+
+    async Task<List<string>> getGithubResponsePayloadItem(string url, List<string> keys)
+    {
+        var githubClient = await getGithubAPIClient();
+        var response = await githubClient.GetAsync(url);
+        var responsePayload = await response.Content.ReadAsStringAsync();
+        var responsePayloadJson = JsonSerializer.Deserialize<JsonElement>(responsePayload);
+        var result = new List<string>();
+        foreach (var key in keys)
+        {
+            result.Add(responsePayloadJson.GetProperty(key).GetString() ?? "");
+        }
+        return result;
     }
 
     async Task<string> GetGithubAccessToken()

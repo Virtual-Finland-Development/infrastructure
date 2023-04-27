@@ -15,31 +15,29 @@ class CredentialsPublisher
         _github = new GitHubService();
     }
 
-    public async void PublishAccessKey(AccessKey accessKey)
+    public async void PublishAccessKey(AccessKey accessKey, string environment)
     {
         var projects = GetProjects();
-        var githubClient = await _github.GetGithubClient();
         var organizationName = "Virtual-Finland-Development";
 
         foreach (var project in projects)
         {
             _logger.LogLine($"Publishing key {accessKey.AccessKeyId} to project {project.Name}");
-            var publicKey = await githubClient.Repository.Actions.Secrets.GetPublicKey(organizationName, project.Name);
 
-            var accessKeyId = _github.GetSecretForCreate(accessKey.AccessKeyId, publicKey);
-            await githubClient.Repository.Actions.Secrets.CreateOrUpdate(
+            await _github.CreateOrUpdateEnvironmentSecret(
                 organizationName,
                 project.Name,
+                environment,
                 "AWS_ACCESS_KEY_ID",
-                accessKeyId
+                accessKey.AccessKeyId
             );
 
-            var accessKeySecret = _github.GetSecretForCreate(accessKey.SecretAccessKey, publicKey);
-            await githubClient.Repository.Actions.Secrets.CreateOrUpdate(
+            await _github.CreateOrUpdateEnvironmentSecret(
                 organizationName,
                 project.Name,
+                environment,
                 "AWS_ACCESS_KEY_SECRET",
-                accessKeySecret
+                accessKey.SecretAccessKey
             );
         }
     }
@@ -48,9 +46,7 @@ class CredentialsPublisher
     {
         return new List<Project>
         {
-            new Project { Name = "virtual-finland" },
-            new Project { Name = "testbed-api" }, 
-            // ...
+            new Project { Name = "status-info-api" },
         };
     }
 }
