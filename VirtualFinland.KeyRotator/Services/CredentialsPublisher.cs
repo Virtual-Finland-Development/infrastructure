@@ -25,7 +25,7 @@ class CredentialsPublisher
 
         foreach (var project in projects)
         {
-            _logger.LogLine($"Publishing key {accessKey.AccessKeyId} to project {project.Name}..");
+            _logger.LogInformation($"Publishing key {accessKey.AccessKeyId} to project {project.Name}..");
 
             await _github.CreateOrUpdateEnvironmentSecret(
                 organizationName,
@@ -42,9 +42,9 @@ class CredentialsPublisher
                 "AWS_ACCESS_KEY_SECRET",
                 accessKey.SecretAccessKey
             );
-
-            _logger.LogLine("Key published");
         }
+
+        _logger.LogInformation("Key published");
     }
 
     List<Project> GetProjects()

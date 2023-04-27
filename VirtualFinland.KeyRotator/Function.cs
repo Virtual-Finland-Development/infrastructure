@@ -17,7 +17,7 @@ public class Function
             // Publish new key to the pipelines
             await credentialsPublisher.PublishAccessKey(newKey);
         }
-        context.Logger.LogLine("Key rotations completed");
+        context.Logger.LogInformation("Key rotations completed");
     }
 
     Settings GetSettings()

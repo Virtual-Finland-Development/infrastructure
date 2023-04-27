@@ -28,7 +28,7 @@ class AccessKeyRotator
         }
 
         // Sort keys by creation date, newest first
-        _logger.LogLine($"Access keys found: {accessKeys.Count}");
+        _logger.LogInformation($"Access keys found: {accessKeys.Count}");
 
         if (accessKeys.Count > 2)
         {
@@ -37,19 +37,24 @@ class AccessKeyRotator
         }
         else if (accessKeys.Count <= 1)
         {
-            // Release new key 
+            if (accessKeys.Count == 1)
+            {
+                _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
+            }
+
+            // Craete new key 
             accessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
                 UserName = settings.IAMUserName
             }).Result.AccessKey;
-            _logger.LogLine($"New key created: {accessKey.AccessKeyId}");
+            _logger.LogInformation($"New key created: {accessKey.AccessKeyId}");
         }
         else
         {
             // Invalidate or delete the oldest key
             var newestKey = accessKeys.First();
             var oldestKey = accessKeys.Last();
-            _logger.LogLine($"Kept the newest key: {newestKey.AccessKeyId}");
+            _logger.LogInformation($"Kept the newest key: {newestKey.AccessKeyId}");
 
             if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Active)
             {
@@ -59,7 +64,7 @@ class AccessKeyRotator
                     AccessKeyId = oldestKey.AccessKeyId,
                     Status = Amazon.IdentityManagement.StatusType.Inactive
                 }).Wait();
-                _logger.LogLine($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
+                _logger.LogInformation($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
             }
             else if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Inactive)
             {
@@ -68,7 +73,7 @@ class AccessKeyRotator
                     UserName = settings.IAMUserName,
                     AccessKeyId = oldestKey.AccessKeyId
                 }).Wait();
-                _logger.LogLine($"Deleted the oldest key: {oldestKey.AccessKeyId}");
+                _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");
             }
             else
             {

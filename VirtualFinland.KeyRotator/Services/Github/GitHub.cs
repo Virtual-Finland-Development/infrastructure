@@ -10,7 +10,6 @@ using Amazon;
 using Amazon.Lambda.Core;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
-using Octokit;
 using Sodium;
 
 namespace VirtualFinland.KeyRotator.Services.Github;
@@ -35,7 +34,7 @@ public class GitHubService
         var githubClient = await getGithubAPIClient();
         var repositoryId = await GetRepositoryId(organizationName, repositoryName);
 
-        var publicKeyPackage = await GetPublicKey(repositoryId, environment);
+        var publicKeyPackage = await GetPublicKeyPackage(repositoryId, environment);
         var secret = GetSecretForCreate(secretValue, publicKeyPackage);
 
         await PutCreateOrUpdateEnvironmentSecret(repositoryId, environment, secretName, secret);
@@ -46,20 +45,13 @@ public class GitHubService
     // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
     // @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
     //
-    UpsertRepositorySecret GetSecretForCreate(string secretValue, SecretsPublicKey key)
+    UpsertRepositorySecretPackage GetSecretForCreate(string secretValue, PublicKeyPackage publicKeyPackage)
     {
         var secretBytes = Encoding.UTF8.GetBytes(secretValue);
-        var publicKey = Convert.FromBase64String(key.Key);
+        var publicKey = Convert.FromBase64String(publicKeyPackage.key ?? throw new ArgumentNullException("Public key is null"));
         var sealedPublicKeyBox = SealedPublicKeyBox.Create(secretBytes, publicKey);
 
-        var upsertValue = new UpsertRepositorySecret
-        {
-            EncryptedValue = Convert.ToBase64String(sealedPublicKeyBox),
-            KeyId = key.KeyId
-
-        };
-
-        return upsertValue;
+        return new UpsertRepositorySecretPackage(Convert.ToBase64String(sealedPublicKeyBox), publicKeyPackage.key_id);
     }
 
     async Task<HttpClient> getGithubAPIClient()
@@ -117,15 +109,12 @@ public class GitHubService
     //
     // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
     //
-    async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecret secret)
+    async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secret)
     {
         var githubClient = await getGithubAPIClient();
 
         var uri = $"/repositories/{repositoryId}/environments/{environment}/secrets/{secretName}";
-        var textContent = JsonSerializer.Serialize(new Dictionary<string, string> {
-            { "encrypted_value", secret.EncryptedValue },
-            { "key_id", secret.KeyId }
-        });
+        var textContent = JsonSerializer.Serialize(secret);
         var content = new StringContent(textContent, Encoding.UTF8, "application/json");
 
         var response = await githubClient.PutAsync(uri, content);
@@ -133,12 +122,12 @@ public class GitHubService
         {
             var resposneContent = await response.Content.ReadAsStringAsync();
 
-            _logger.LogLine($"URI: {uri}");
-            _logger.LogLine($"Request body: {textContent}");
-            _logger.LogLine($"Response: {resposneContent}");
-            _logger.LogLine(response.ToString());
+            _logger.LogInformation($"URI: {uri}");
+            _logger.LogInformation($"Request body: {textContent}");
+            _logger.LogInformation($"Response: {resposneContent}");
+            _logger.LogInformation(response.ToString());
 
-            throw new ArgumentException($"Failed to create secret for ${secretName} in environment ${environment}");
+            throw new ArgumentException($"Failed to create secret for {secretName} in environment {environment}");
         }
     }
 
@@ -156,14 +145,14 @@ public class GitHubService
             throw new ArgumentException($"Failed to fetch repository id :: {responseBody}");
         }
 
-        var responseAsObject = JsonSerializer.Deserialize<RepositoryResponse>(responseBody);
+        var responseAsObject = JsonSerializer.Deserialize<GitHubResourcePackage>(responseBody);
         return responseAsObject?.id ?? throw new ArgumentNullException($"Failed to deserialize repository response: {responseBody}");
     }
 
     //
     // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
     // 
-    async Task<SecretsPublicKey> GetPublicKey(int repositoryId, string environment)
+    async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
     {
         var githubClient = await getGithubAPIClient();
         var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
@@ -173,16 +162,16 @@ public class GitHubService
             throw new ArgumentException($"Failed to fetch public key :: {responseBody}");
         }
 
-        var responseAsObject = JsonSerializer.Deserialize<PublicKeyResponse>(responseBody);
-        if (responseAsObject == null)
+        var publicKeyPackage = JsonSerializer.Deserialize<PublicKeyPackage>(responseBody);
+        if (publicKeyPackage == null || string.IsNullOrEmpty(publicKeyPackage.key_id) || string.IsNullOrEmpty(publicKeyPackage.key))
         {
             throw new ArgumentNullException($"Failed to deserialize public key response: {responseBody}");
         }
 
-        return new SecretsPublicKey(responseAsObject.key_id, responseAsObject.key);
+        return publicKeyPackage;
     }
 }
 
-record RepositoryResponse(int? id);
-record PublicKeyResponse(string? key_id, string? key);
-
+record GitHubResourcePackage(int? id);
+record PublicKeyPackage(string? key_id, string? key);
+record UpsertRepositorySecretPackage(string? encrypted_value, string? key_id);
