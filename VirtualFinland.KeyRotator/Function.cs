@@ -5,49 +5,39 @@ namespace VirtualFinland.KeyRotator;
 
 public class Function
 {
-    public void FunctionHandler(ILambdaContext context)
+    public async Task FunctionHandler(ILambdaContext context)
     {
-        var inputArgs = ParseInputArgs();
+        var settings = GetSettings();
         var rotator = new AccessKeyRotator(context);
-        var credentialsPublisher = new CredentialsPublisher(context);
+        var credentialsPublisher = new CredentialsPublisher(settings, context);
 
-        var newKey = rotator.RotateAccessKey(inputArgs);
+        var newKey = rotator.RotateAccessKey(settings);
         if (newKey != null)
         {
             // Publish new key to the pipelines
-            credentialsPublisher.PublishAccessKey(newKey, inputArgs.Environment);
+            await credentialsPublisher.PublishAccessKey(newKey);
         }
+        context.Logger.LogLine("Key rotations completed");
     }
 
-    InputArgs ParseInputArgs()
+    Settings GetSettings()
     {
-        var inputObject = new InputArgs();
-
-
-        if (string.IsNullOrEmpty(inputObject.IAMUserName))
+        var inputObject = new Settings()
         {
-            inputObject.IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty;
-        }
-        if (string.IsNullOrEmpty(inputObject.IAMUserName))
-        {
-            throw new ArgumentException("IAMUserName not defined");
-        }
-
-        if (string.IsNullOrEmpty(inputObject.Environment))
-        {
-            inputObject.Environment = Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty;
-        }
-        if (string.IsNullOrEmpty(inputObject.Environment))
-        {
-            throw new ArgumentException("Environment not defined");
-        }
+            IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty,
+            Environment = Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty,
+            SecretName = Environment.GetEnvironmentVariable("SECRET_NAME") ?? string.Empty,
+            SecretRegion = Environment.GetEnvironmentVariable("SECRET_REGION") ?? string.Empty
+        };
 
         return inputObject;
     }
 }
 
-public record InputArgs
+public record Settings
 {
     public string IAMUserName { get; set; } = string.Empty;
     public string Environment { get; set; } = string.Empty;
+    public string SecretName { get; set; } = string.Empty;
+    public string SecretRegion { get; set; } = string.Empty;
 }

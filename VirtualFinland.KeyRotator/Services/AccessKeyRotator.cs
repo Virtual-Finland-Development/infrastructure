@@ -11,7 +11,7 @@ class AccessKeyRotator
         _logger = context.Logger;
     }
 
-    public AccessKey? RotateAccessKey(InputArgs inputObject)
+    public AccessKey? RotateAccessKey(Settings settings)
     {
         AccessKey? accessKey = null;
         var iamClient = new Amazon.IdentityManagement.AmazonIdentityManagementServiceClient();
@@ -19,7 +19,7 @@ class AccessKeyRotator
         // Obtain the access keys for the user
         var accessKeys = iamClient.ListAccessKeysAsync(new Amazon.IdentityManagement.Model.ListAccessKeysRequest()
         {
-            UserName = inputObject.IAMUserName
+            UserName = settings.IAMUserName
         }).Result.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList();
 
         if (accessKeys == null)
@@ -28,8 +28,7 @@ class AccessKeyRotator
         }
 
         // Sort keys by creation date, newest first
-        _logger.LogLine($"Acces keys count: {accessKeys.Count}");
-        accessKeys.ForEach(x => _logger.LogLine($"Key: {x.AccessKeyId}"));
+        _logger.LogLine($"Access keys found: {accessKeys.Count}");
 
         if (accessKeys.Count > 2)
         {
@@ -41,41 +40,41 @@ class AccessKeyRotator
             // Release new key 
             accessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
-                UserName = inputObject.IAMUserName
+                UserName = settings.IAMUserName
             }).Result.AccessKey;
             _logger.LogLine($"New key created: {accessKey.AccessKeyId}");
         }
         else
         {
             // Invalidate or delete the oldest key
+            var newestKey = accessKeys.First();
             var oldestKey = accessKeys.Last();
-            _logger.LogLine($"Oldest key: {oldestKey.AccessKeyId}");
+            _logger.LogLine($"Kept the newest key: {newestKey.AccessKeyId}");
 
             if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Active)
             {
-                // Invalidate the key
                 iamClient.UpdateAccessKeyAsync(new Amazon.IdentityManagement.Model.UpdateAccessKeyRequest()
                 {
-                    UserName = inputObject.IAMUserName,
+                    UserName = settings.IAMUserName,
                     AccessKeyId = oldestKey.AccessKeyId,
                     Status = Amazon.IdentityManagement.StatusType.Inactive
                 }).Wait();
+                _logger.LogLine($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
             }
             else if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Inactive)
             {
-                // Delete the key
                 iamClient.DeleteAccessKeyAsync(new Amazon.IdentityManagement.Model.DeleteAccessKeyRequest()
                 {
-                    UserName = inputObject.IAMUserName,
+                    UserName = settings.IAMUserName,
                     AccessKeyId = oldestKey.AccessKeyId
                 }).Wait();
+                _logger.LogLine($"Deleted the oldest key: {oldestKey.AccessKeyId}");
             }
             else
             {
                 throw new ArgumentException("Unknown key status");
             }
         }
-        _logger.LogLine($"Key rotation completed.");
 
         return accessKey;
     }

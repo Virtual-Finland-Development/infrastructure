@@ -6,23 +6,26 @@ namespace VirtualFinland.KeyRotator.Services;
 
 class CredentialsPublisher
 {
+    Settings _settings;
     ILambdaLogger _logger;
     GitHubService _github;
 
-    public CredentialsPublisher(ILambdaContext context)
+    public CredentialsPublisher(Settings settings, ILambdaContext context)
     {
+        _settings = settings;
         _logger = context.Logger;
-        _github = new GitHubService();
+        _github = new GitHubService(settings, context);
     }
 
-    public async void PublishAccessKey(AccessKey accessKey, string environment)
+    public async Task PublishAccessKey(AccessKey accessKey)
     {
         var projects = GetProjects();
+        var environment = _settings.Environment;
         var organizationName = "Virtual-Finland-Development";
 
         foreach (var project in projects)
         {
-            _logger.LogLine($"Publishing key {accessKey.AccessKeyId} to project {project.Name}");
+            _logger.LogLine($"Publishing key {accessKey.AccessKeyId} to project {project.Name}..");
 
             await _github.CreateOrUpdateEnvironmentSecret(
                 organizationName,
@@ -39,6 +42,8 @@ class CredentialsPublisher
                 "AWS_ACCESS_KEY_SECRET",
                 accessKey.SecretAccessKey
             );
+
+            _logger.LogLine("Key published");
         }
     }
 

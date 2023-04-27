@@ -6,6 +6,7 @@ using Pulumi.Aws.CloudWatch.Inputs;
 using Pulumi.Aws.Iam;
 using Pulumi.Aws.Lambda;
 using Pulumi.Aws.Lambda.Inputs;
+using Pulumi.Aws.SecretsManager;
 
 namespace VirtualFinland.Infrastructure.Stacks.Features;
 
@@ -111,10 +112,46 @@ public class KeyRotator
         });
 
         // Attach policy to role
-        var keyRotarorPolicyAttachment = new RolePolicyAttachment($"cicd-key-rotator-policy-attachment-{environment}", new()
+        new RolePolicyAttachment($"cicd-key-rotator-policy-attachment-{environment}", new()
         {
             Role = keyRotarorExecRole.Name,
             PolicyArn = keyRotarorPolicy.Arn,
+        });
+
+        // Create / attach to secret manager
+        var secretManagerName = "VirtualFinland.KeyRotator"; // Static value, shared between stacks
+        var secretsManager = new Secret(secretManagerName, new()
+        {
+            Name = secretManagerName, // Override the hashed pulumi name for a locally referenceable name
+            Description = "Github credentials for IAM access key updates",
+            Tags = {
+                { "Project", "infrastructure" },
+            },
+        });
+
+        // Secrets manager policy
+        var keyRotarorSecretsManagerPolicy = new Pulumi.Aws.Iam.Policy($"cicd-key-rotator-secrets-manager-policy-{environment}", new()
+        {
+            Description = "Read permissions to the secrets manager",
+            PolicyDocument = Output.Format($@"{{
+                ""Version"": ""2012-10-17"",
+                ""Statement"": [
+                    {{
+                        ""Effect"": ""Allow"",
+                        ""Action"": [
+                            ""secretsmanager:GetSecretValue""
+                        ],
+                        ""Resource"": [
+                            ""{secretsManager.Arn}""
+                        ]
+                    }}
+                ]
+            }}"),
+        });
+        new RolePolicyAttachment($"cicd-key-rotator-secrets-manager-policy-attachment-{environment}", new()
+        {
+            Role = keyRotarorExecRole.Name,
+            PolicyArn = keyRotarorSecretsManagerPolicy.Arn,
         });
 
         // Attach basic execution role so that lambda can write logs
@@ -127,6 +164,8 @@ public class KeyRotator
         //
         // Setup lambda function and scheduler for it
         //
+        var config = new Pulumi.Config("aws");
+        var currentRegion = config.Require("region");
         var artifactPath = "../VirtualFinland.KeyRotator/release";
         var keyRotator = new Function($"cicd-key-rotator-{environment}", new FunctionArgs
         {
@@ -143,6 +182,8 @@ public class KeyRotator
                 {
                     { "CICD_BOT_IAM_USER_NAME", botUser.Name },
                     { "ENVIRONMENT", environment },
+                    { "SECRET_NAME", secretManagerName },
+                    { "SECRET_REGION", currentRegion },
                 }
             },
         });
