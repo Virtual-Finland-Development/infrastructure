@@ -45,7 +45,7 @@ public class KeyRotator
                 ""Statement"": [
                     {{
                         ""Action"": [
-                            ""iam:AssumeRole""
+                            ""sts:AssumeRole""
                         ],
                         ""Effect"": ""Allow"",
                         ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*""
