@@ -1,17 +1,13 @@
-using System.Text.Json;
 using Amazon.Lambda.Core;
 using VirtualFinland.KeyRotator.Services;
-
-// Assembly attribute to enable the Lambda function's JSON input to be converted into a .NET class.
-[assembly: LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
 
 namespace VirtualFinland.KeyRotator;
 
 public class Function
 {
-    public void FunctionHandler(string input, ILambdaContext context)
+    public void FunctionHandler(ILambdaContext context)
     {
-        var inputArgs = ParseInputArgs(input, context);
+        var inputArgs = ParseInputArgs();
         var rotator = new AccessKeyRotator(context);
         var credentialsPublisher = new CredentialsPublisher(context);
 
@@ -23,19 +19,10 @@ public class Function
         }
     }
 
-    InputArgs ParseInputArgs(string input, ILambdaContext context)
+    InputArgs ParseInputArgs()
     {
         var inputObject = new InputArgs();
 
-        if (!string.IsNullOrEmpty(input))
-        {
-            context.Logger.LogLine($"Raw input: {input}");
-            var parsedInput = JsonSerializer.Deserialize<InputArgs>(input);
-            if (parsedInput != null)
-            {
-                inputObject = parsedInput;
-            }
-        }
 
         if (string.IsNullOrEmpty(inputObject.IAMUserName))
         {
