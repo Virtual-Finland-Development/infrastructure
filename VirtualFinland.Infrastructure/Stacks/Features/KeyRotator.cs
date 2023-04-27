@@ -33,29 +33,24 @@ public class KeyRotator
             }
         });
 
+        // Get aws account id using pulumi aws native
         var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
 
         var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
             Group = botUserGroup.Name,
-            Policy = JsonSerializer.Serialize(new Dictionary<string, object?>
-            {
-                { "Version", "2012-10-17" },
-                {
-                    "Statement", new[]
-                    {
-                        new Dictionary<string, object?>
-                        {
-                            { "Action", "sts:AssumeRole" },
-                            { "Effect", "Allow" },
-                            { "Sid", "" },
-                            {
-                                "Resource", $"arn:aws:iam::{currentAwsIdentity.Apply(o => $"{o.AccountId}")}:role/*"
-                            }
-                        }
-                    }
-                }
-            })
+            Policy = currentAwsIdentity.Apply(r => $@"{{
+                ""Version"": ""2012-10-17"",
+                ""Statement"": [
+                    {{
+                        ""Action"": [
+                            ""iam:AssumeRole""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*""
+                    }}
+                ]
+            }}")
         });
 
         return botUser;
@@ -164,7 +159,7 @@ public class KeyRotator
             Arn = keyRotator.Arn,
             RetryPolicy = new EventTargetRetryPolicyArgs
             {
-                MaximumEventAgeInSeconds = 30,
+                MaximumEventAgeInSeconds = 120,
                 MaximumRetryAttempts = 0
             }
         });
