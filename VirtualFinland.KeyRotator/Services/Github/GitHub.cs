@@ -53,6 +53,41 @@ public class GitHubService
     }
 
     // <summary>
+    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
+    // </summary>
+    async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
+    {
+        var githubClient = await getGithubAPIClient();
+        var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
+        var responseBody = await response.Content.ReadAsStringAsync();
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new ArgumentException($"Failed to fetch public key :: {responseBody}");
+        }
+
+        var publicKeyPackage = JsonSerializer.Deserialize<PublicKeyPackage>(responseBody);
+        if (publicKeyPackage == null || string.IsNullOrEmpty(publicKeyPackage.key_id) || string.IsNullOrEmpty(publicKeyPackage.key))
+        {
+            throw new ArgumentNullException($"Failed to deserialize public key response: {responseBody}");
+        }
+
+        return publicKeyPackage;
+    }
+
+    // <summary>
+    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
+    // @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
+    // </summary>
+    UpsertRepositorySecretPackage MakeSecretPackage(string secretValue, PublicKeyPackage publicKeyPackage)
+    {
+        var secretBytes = Encoding.UTF8.GetBytes(secretValue);
+        var publicKey = Convert.FromBase64String(publicKeyPackage.key ?? throw new ArgumentNullException("Public key is null"));
+        var sealedPublicKeyBox = SealedPublicKeyBox.Create(secretBytes, publicKey);
+
+        return new UpsertRepositorySecretPackage(Convert.ToBase64String(sealedPublicKeyBox), publicKeyPackage.key_id);
+    }
+
+    // <summary>
     // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
     // </summary>
     async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secretPackage)
@@ -75,41 +110,6 @@ public class GitHubService
 
             throw new ArgumentException($"Failed to create secret for {secretName} in environment {environment}");
         }
-    }
-
-    // <summary>
-    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
-    // @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
-    // </summary>
-    UpsertRepositorySecretPackage MakeSecretPackage(string secretValue, PublicKeyPackage publicKeyPackage)
-    {
-        var secretBytes = Encoding.UTF8.GetBytes(secretValue);
-        var publicKey = Convert.FromBase64String(publicKeyPackage.key ?? throw new ArgumentNullException("Public key is null"));
-        var sealedPublicKeyBox = SealedPublicKeyBox.Create(secretBytes, publicKey);
-
-        return new UpsertRepositorySecretPackage(Convert.ToBase64String(sealedPublicKeyBox), publicKeyPackage.key_id);
-    }
-
-    // <summary>
-    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
-    // </summary>
-    async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
-    {
-        var githubClient = await getGithubAPIClient();
-        var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
-        var responseBody = await response.Content.ReadAsStringAsync();
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new ArgumentException($"Failed to fetch public key :: {responseBody}");
-        }
-
-        var publicKeyPackage = JsonSerializer.Deserialize<PublicKeyPackage>(responseBody);
-        if (publicKeyPackage == null || string.IsNullOrEmpty(publicKeyPackage.key_id) || string.IsNullOrEmpty(publicKeyPackage.key))
-        {
-            throw new ArgumentNullException($"Failed to deserialize public key response: {responseBody}");
-        }
-
-        return publicKeyPackage;
     }
 
     // <summary>
