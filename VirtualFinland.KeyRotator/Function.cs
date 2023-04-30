@@ -7,7 +7,7 @@ namespace VirtualFinland.KeyRotator;
 public class Function
 {
     [LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
-    public async Task FunctionHandler(CloudwatchEventInput input, ILambdaContext context)
+    public async Task FunctionHandler(LambdaEventInput input, ILambdaContext context)
     {
 
         var logger = context.Logger;
@@ -24,7 +24,7 @@ public class Function
         context.Logger.LogInformation("Key rotations completed");
     }
 
-    Settings ResolveSettings(CloudwatchEventInput input)
+    Settings ResolveSettings(LambdaEventInput input)
     {
         var inputObject = new Settings()
         {
@@ -39,7 +39,7 @@ public class Function
         return inputObject;
     }
 
-    public record CloudwatchEventInput
+    public record LambdaEventInput
     {
         [JsonPropertyName("ENVIRONMENT")]
         public string? Environment { get; set; }
