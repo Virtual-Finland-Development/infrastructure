@@ -39,7 +39,7 @@ class CredentialsPublisher
                 organizationName,
                 project.Name,
                 environment,
-                "AWS_ACCESS_KEY_SECRET",
+                "AWS_SECRET_ACCESS_KEY",
                 accessKey.SecretAccessKey
             );
         }
