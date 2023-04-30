@@ -20,9 +20,9 @@ public abstract class GitHubApi
         _awsSecretRegion = settings.SecretRegion;
     }
 
-    // <summary>
-    // Get a http client with authorization headers for github api
-    // </summary>
+    /// <summary>
+    /// Get a http client with authorization headers for github api
+    /// </summary>
     protected async Task<HttpClient> GetGithubAPIClient()
     {
         if (_httpClient == null)
@@ -38,9 +38,9 @@ public abstract class GitHubApi
         return _httpClient;
     }
 
-    // <summary>
-    // Get a github access token from AWS Secrets Manager
-    // </summary>
+    /// <summary>
+    /// Get a github access token from AWS Secrets Manager
+    /// </summary>
     async Task<string> GetGithubAccessToken()
     {
         _logger.LogInformation($"Getting github access token from AWS Secrets Manager");

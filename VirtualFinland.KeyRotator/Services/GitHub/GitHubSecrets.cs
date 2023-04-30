@@ -11,9 +11,9 @@ public class GitHubSecrets : GitHubApi
     {
     }
 
-    // <summary>
-    // Create or update an environment secret for a github repository
-    // </summary>
+    /// <summary>
+    /// Create or update an environment secret for a github repository
+    /// </summary>
     public async Task CreateOrUpdateEnvironmentSecret(string organizationName, int repositoryId, string environment, string secretName, string secretValue)
     {
         var publicKeyPackage = await GetPublicKeyPackage(repositoryId, environment);
@@ -22,9 +22,9 @@ public class GitHubSecrets : GitHubApi
         await PutCreateOrUpdateEnvironmentSecret(repositoryId, environment, secretName, secretPackage);
     }
 
-    // <summary>
-    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
-    // </summary>
+    /// <summary>
+    /// @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
+    /// </summary>
     async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
     {
         var githubClient = await GetGithubAPIClient();
@@ -44,10 +44,10 @@ public class GitHubSecrets : GitHubApi
         return publicKeyPackage;
     }
 
-    // <summary>
-    // @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
-    // @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
-    // </summary>
+    /// <summary>
+    /// @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
+    /// @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
+    /// </summary>
     UpsertRepositorySecretPackage MakeSecretPackage(string secretValue, PublicKeyPackage publicKeyPackage)
     {
         var secretBytes = Encoding.UTF8.GetBytes(secretValue);

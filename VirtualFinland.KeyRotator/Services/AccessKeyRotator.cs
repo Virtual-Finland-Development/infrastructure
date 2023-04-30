@@ -14,24 +14,20 @@ class AccessKeyRotator
         _logger = logger;
     }
 
+    /// <summary>
+    /// Rotates the access key for the IAM user
+    /// </summary>
+    /// <returns>
+    /// The new access key if created, otherwise null
+    /// </returns>
     public AccessKey? RotateAccessKey()
     {
-        AccessKey? accessKey = null;
+        AccessKey? newlyCreatedAccessKey = null;
         var iamClient = new Amazon.IdentityManagement.AmazonIdentityManagementServiceClient();
 
         // Obtain the access keys for the user
-        var accessKeys = iamClient.ListAccessKeysAsync(new Amazon.IdentityManagement.Model.ListAccessKeysRequest()
-        {
-            UserName = _iamUserName
-        }).Result.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList();
-
-        if (accessKeys == null)
-        {
-            throw new ArgumentException("No keys found");
-        }
-
-        // Sort keys by creation date, newest first
-        _logger.LogInformation($"Access keys found: {accessKeys.Count}");
+        var accessKeys = RetrieveIAMAccessKeys(iamClient);
+        _logger.LogInformation($"Access keys count: {accessKeys.Count}");
 
         if (accessKeys.Count > 2)
         {
@@ -46,11 +42,11 @@ class AccessKeyRotator
             }
 
             // Craete new key 
-            accessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
+            newlyCreatedAccessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
                 UserName = _iamUserName
             }).Result.AccessKey;
-            _logger.LogInformation($"New key created: {accessKey.AccessKeyId}");
+            _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
         }
         else
         {
@@ -84,6 +80,24 @@ class AccessKeyRotator
             }
         }
 
-        return accessKey;
+        return newlyCreatedAccessKey;
+    }
+
+    /// <summary>
+    /// Retrieve the access keys and sort by creation date, newest first
+    /// </summary>
+    List<AccessKeyMetadata> RetrieveIAMAccessKeys(Amazon.IdentityManagement.AmazonIdentityManagementServiceClient iamClient)
+    {
+        var accessKeys = iamClient.ListAccessKeysAsync(new Amazon.IdentityManagement.Model.ListAccessKeysRequest()
+        {
+            UserName = _iamUserName
+        }).Result.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList();
+
+        if (accessKeys == null)
+        {
+            throw new ArgumentException("Error in retrieving access keys");
+        }
+
+        return accessKeys;
     }
 }

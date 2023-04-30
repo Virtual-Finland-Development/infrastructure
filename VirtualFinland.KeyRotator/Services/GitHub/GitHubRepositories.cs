@@ -17,9 +17,9 @@ public class GitHubRepositories : GitHubApi
         _gitHubRepositoryNameFilterItems = settings.GitHubRepositoryNames;
     }
 
-    // <summary>
-    // Get all projects that have the environment configured
-    // </summary>
+    /// <summary>
+    /// Get all projects that have the environment configured
+    /// </summary>
     public async Task<List<GitRepository>> GetTargetRepositories()
     {
         var targetRepositories = new List<GitRepository>();
@@ -47,9 +47,9 @@ public class GitHubRepositories : GitHubApi
         return targetRepositories;
     }
 
-    // <summary>
-    // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
-    // </summary>
+    /// <summary>
+    /// https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
+    /// </summary>
     async Task<List<GitRepository>> GetOrganizationRepositories(string organizationName)
     {
         var githubClient = await GetGithubAPIClient();
