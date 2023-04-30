@@ -8,11 +8,13 @@ public class GitHubRepositories : GitHubApi
 {
     readonly string _githubOrganizationName;
     readonly string _environment;
+    readonly List<string> _gitHubRepositoryNameFilterItems;
 
     public GitHubRepositories(Settings settings, ILambdaLogger logger) : base(settings, logger)
     {
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;
+        _gitHubRepositoryNameFilterItems = settings.GitHubRepositoryNames;
     }
 
     // <summary>
@@ -24,6 +26,12 @@ public class GitHubRepositories : GitHubApi
 
         var githubClient = await GetGithubAPIClient();
         var repositories = await GetOrganizationRepositories(_githubOrganizationName);
+
+        if (_gitHubRepositoryNameFilterItems.Any())
+        {
+            _logger.LogInformation($"Filtering repositories by names: {string.Join(',', _gitHubRepositoryNameFilterItems)}");
+            repositories = repositories.Where(r => _gitHubRepositoryNameFilterItems.Contains(r.Name)).ToList();
+        }
 
         foreach (var repository in repositories)
         {

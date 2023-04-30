@@ -5,9 +5,9 @@ using Sodium;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GithubSecrets : GitHubApi
+public class GitHubSecrets : GitHubApi
 {
-    public GithubSecrets(Settings settings, ILambdaLogger logger) : base(settings, logger)
+    public GitHubSecrets(Settings settings, ILambdaLogger logger) : base(settings, logger)
     {
     }
 

@@ -8,31 +8,28 @@ class CredentialsPublisher
 {
     Settings _settings;
     ILambdaLogger _logger;
-    GithubSecrets _githubSecrets;
-    GitHubRepositories _githubRepositories;
+    GitHubSecrets _gitHubSecrets;
+    GitHubRepositories _gitHubRepositories;
 
     public CredentialsPublisher(Settings settings, ILambdaLogger logger)
     {
         _settings = settings;
         _logger = logger;
-        _githubSecrets = new GithubSecrets(settings, logger);
-        _githubRepositories = new GitHubRepositories(settings, logger);
+        _gitHubSecrets = new GitHubSecrets(settings, logger);
+        _gitHubRepositories = new GitHubRepositories(settings, logger);
     }
 
     public async Task PublishAccessKey(AccessKey accessKey)
     {
-        var repositories = await _githubRepositories.GetTargetRepositories();
+        var repositories = await _gitHubRepositories.GetTargetRepositories();
         var environment = _settings.Environment;
         var organizationName = _settings.GitHubOrganizationName;
-
-        // Debug limitter
-        // repositories = repositories.Take(3).ToList();
 
         foreach (var repository in repositories)
         {
             _logger.LogInformation($"Publishing key {accessKey.AccessKeyId} to project {repository.Name} ..");
 
-            await _githubSecrets.CreateOrUpdateEnvironmentSecret(
+            await _gitHubSecrets.CreateOrUpdateEnvironmentSecret(
                 organizationName,
                 repository.Id,
                 environment,
@@ -40,7 +37,7 @@ class CredentialsPublisher
                 accessKey.AccessKeyId
             );
 
-            await _githubSecrets.CreateOrUpdateEnvironmentSecret(
+            await _gitHubSecrets.CreateOrUpdateEnvironmentSecret(
                 organizationName,
                 repository.Id,
                 environment,

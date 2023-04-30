@@ -23,7 +23,7 @@ public abstract class GitHubApi
     // <summary>
     // Get a http client with authorization headers for github api
     // </summary>
-    public async Task<HttpClient> GetGithubAPIClient()
+    protected async Task<HttpClient> GetGithubAPIClient()
     {
         if (_httpClient == null)
         {
