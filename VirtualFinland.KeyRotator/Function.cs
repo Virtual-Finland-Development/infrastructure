@@ -32,7 +32,7 @@ public class Function
             Environment = input.Environment ?? Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty,
             SecretName = Environment.GetEnvironmentVariable("SECRET_NAME") ?? string.Empty,
             SecretRegion = Environment.GetEnvironmentVariable("SECRET_REGION") ?? string.Empty,
-            GitHubOrganizationName = Environment.GetEnvironmentVariable("GITHUB_ORGANIZATION_NAME") ?? "Virtual-Finland-Development",
+            GitHubOrganizationName = input.GitHubOrganizationName ?? Environment.GetEnvironmentVariable("GITHUB_ORGANIZATION_NAME") ?? "Virtual-Finland-Development",
             GitHubRepositoryNames = input.GitHubRepositoryNames?.Split(',')?.ToList() ?? Environment.GetEnvironmentVariable("GITHUB_REPOSITORY_NAMES")?.Split(',')?.ToList() ?? new List<string>()
         };
 
