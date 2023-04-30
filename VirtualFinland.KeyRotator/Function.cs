@@ -27,7 +27,8 @@ public class Function
             IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty,
             Environment = Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty,
             SecretName = Environment.GetEnvironmentVariable("SECRET_NAME") ?? string.Empty,
-            SecretRegion = Environment.GetEnvironmentVariable("SECRET_REGION") ?? string.Empty
+            SecretRegion = Environment.GetEnvironmentVariable("SECRET_REGION") ?? string.Empty,
+            GitHubOrganizationName = Environment.GetEnvironmentVariable("GITHUB_ORGANIZATION_NAME") ?? "Virtual-Finland-Development"
         };
 
         return inputObject;
@@ -40,4 +41,5 @@ public record Settings
     public string Environment { get; set; } = string.Empty;
     public string SecretName { get; set; } = string.Empty;
     public string SecretRegion { get; set; } = string.Empty;
+    public string GitHubOrganizationName { get; set; } = string.Empty;
 }

@@ -1,6 +1,6 @@
 using Amazon.IdentityManagement.Model;
 using Amazon.Lambda.Core;
-using VirtualFinland.KeyRotator.Services.Github;
+using VirtualFinland.KeyRotator.Services.GitHub;
 
 namespace VirtualFinland.KeyRotator.Services;
 
@@ -8,36 +8,41 @@ class CredentialsPublisher
 {
     Settings _settings;
     ILambdaLogger _logger;
-    GitHubService _github;
+    GithubSecrets _githubSecrets;
+    GitHubRepositories _githubRepositories;
 
     public CredentialsPublisher(Settings settings, ILambdaContext context)
     {
         _settings = settings;
         _logger = context.Logger;
-        _github = new GitHubService(settings, context);
+        _githubSecrets = new GithubSecrets(settings, context);
+        _githubRepositories = new GitHubRepositories(settings, context);
     }
 
     public async Task PublishAccessKey(AccessKey accessKey)
     {
-        var projects = GetProjects();
+        var repositories = await _githubRepositories.GetTargetRepositories();
         var environment = _settings.Environment;
-        var organizationName = "Virtual-Finland-Development";
+        var organizationName = _settings.GitHubOrganizationName;
 
-        foreach (var project in projects)
+        // Debug limitter
+        // repositories = repositories.Take(3).ToList();
+
+        foreach (var repository in repositories)
         {
-            _logger.LogInformation($"Publishing key {accessKey.AccessKeyId} to project {project.Name}..");
+            _logger.LogInformation($"Publishing key {accessKey.AccessKeyId} to project {repository.Name} ..");
 
-            await _github.CreateOrUpdateEnvironmentSecret(
+            await _githubSecrets.CreateOrUpdateEnvironmentSecret(
                 organizationName,
-                project.Name,
+                repository.Id,
                 environment,
                 "AWS_ACCESS_KEY_ID",
                 accessKey.AccessKeyId
             );
 
-            await _github.CreateOrUpdateEnvironmentSecret(
+            await _githubSecrets.CreateOrUpdateEnvironmentSecret(
                 organizationName,
-                project.Name,
+                repository.Id,
                 environment,
                 "AWS_SECRET_ACCESS_KEY",
                 accessKey.SecretAccessKey
@@ -46,17 +51,4 @@ class CredentialsPublisher
 
         _logger.LogInformation("Key published");
     }
-
-    List<Project> GetProjects()
-    {
-        return new List<Project>
-        {
-            new Project { Name = "status-info-api" },
-        };
-    }
-}
-
-public record Project
-{
-    public string Name { get; init; } = "";
 }
