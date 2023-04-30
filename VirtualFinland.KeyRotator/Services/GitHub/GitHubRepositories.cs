@@ -42,7 +42,7 @@ public class GitHubRepositories : GitHubApi
             }
         }
 
-        _logger.LogInformation($"Found {targetRepositories.Count} target repositories in organization {_githubOrganizationName}");
+        _logger.LogInformation($"Found {targetRepositories.Count} target repositories in {_githubOrganizationName} organization");
 
         return targetRepositories;
     }
