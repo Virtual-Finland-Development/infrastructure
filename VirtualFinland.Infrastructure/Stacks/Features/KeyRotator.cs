@@ -172,7 +172,7 @@ public class KeyRotator
             Role = keyRotarorExecRole.Arn,
             Runtime = "dotnet6",
             Handler = "VirtualFinland.KeyRotator::VirtualFinland.KeyRotator.Function::FunctionHandler",
-            Timeout = 30,
+            Timeout = 240,
             MemorySize = 128,
             Code = new FileArchive(artifactPath),
             Tags = tags,
@@ -200,7 +200,7 @@ public class KeyRotator
             Arn = keyRotator.Arn,
             RetryPolicy = new EventTargetRetryPolicyArgs
             {
-                MaximumEventAgeInSeconds = 120,
+                MaximumEventAgeInSeconds = 240,
                 MaximumRetryAttempts = 0
             }
         });

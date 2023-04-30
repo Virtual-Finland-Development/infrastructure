@@ -49,6 +49,6 @@ class CredentialsPublisher
             );
         }
 
-        _logger.LogInformation("Key published");
+        _logger.LogInformation($"Key {accessKey.AccessKeyId} fully published");
     }
 }

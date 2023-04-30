@@ -41,6 +41,7 @@ public class GitHubApi
     // </summary>
     async Task<string> GetGithubAccessToken()
     {
+        _logger.LogInformation($"Getting github access token from AWS Secrets Manager");
         string secretName = _settings.SecretName;
         string region = _settings.SecretRegion;
 
