@@ -5,18 +5,10 @@ using Sodium;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GithubSecrets
+public class GithubSecrets : GitHubApi
 {
-    ILambdaLogger _logger;
-    Settings _settings;
-    GitHubApi _githubApi;
-
-
-    public GithubSecrets(Settings settings, ILambdaContext context)
+    public GithubSecrets(Settings settings, ILambdaLogger logger) : base(settings, logger)
     {
-        _logger = context.Logger;
-        _settings = settings;
-        _githubApi = new GitHubApi(settings, context);
     }
 
     // <summary>
@@ -35,7 +27,7 @@ public class GithubSecrets
     // </summary>
     async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
     {
-        var githubClient = await _githubApi.getGithubAPIClient();
+        var githubClient = await GetGithubAPIClient();
         var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
@@ -70,7 +62,7 @@ public class GithubSecrets
     // </summary>
     async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secretPackage)
     {
-        var githubClient = await _githubApi.getGithubAPIClient();
+        var githubClient = await GetGithubAPIClient();
 
         var uri = $"/repositories/{repositoryId}/environments/{environment}/secrets/{secretName}";
         var textContent = JsonSerializer.Serialize(secretPackage);

@@ -5,13 +5,16 @@ namespace VirtualFinland.KeyRotator.Services;
 
 class AccessKeyRotator
 {
+    readonly string _iamUserName;
     ILambdaLogger _logger;
-    public AccessKeyRotator(ILambdaContext context)
+
+    public AccessKeyRotator(Settings settings, ILambdaLogger logger)
     {
-        _logger = context.Logger;
+        _iamUserName = settings.IAMUserName;
+        _logger = logger;
     }
 
-    public AccessKey? RotateAccessKey(Settings settings)
+    public AccessKey? RotateAccessKey()
     {
         AccessKey? accessKey = null;
         var iamClient = new Amazon.IdentityManagement.AmazonIdentityManagementServiceClient();
@@ -19,7 +22,7 @@ class AccessKeyRotator
         // Obtain the access keys for the user
         var accessKeys = iamClient.ListAccessKeysAsync(new Amazon.IdentityManagement.Model.ListAccessKeysRequest()
         {
-            UserName = settings.IAMUserName
+            UserName = _iamUserName
         }).Result.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList();
 
         if (accessKeys == null)
@@ -45,7 +48,7 @@ class AccessKeyRotator
             // Craete new key 
             accessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
-                UserName = settings.IAMUserName
+                UserName = _iamUserName
             }).Result.AccessKey;
             _logger.LogInformation($"New key created: {accessKey.AccessKeyId}");
         }
@@ -60,7 +63,7 @@ class AccessKeyRotator
             {
                 iamClient.UpdateAccessKeyAsync(new Amazon.IdentityManagement.Model.UpdateAccessKeyRequest()
                 {
-                    UserName = settings.IAMUserName,
+                    UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId,
                     Status = Amazon.IdentityManagement.StatusType.Inactive
                 }).Wait();
@@ -70,7 +73,7 @@ class AccessKeyRotator
             {
                 iamClient.DeleteAccessKeyAsync(new Amazon.IdentityManagement.Model.DeleteAccessKeyRequest()
                 {
-                    UserName = settings.IAMUserName,
+                    UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId
                 }).Wait();
                 _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");

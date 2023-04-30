@@ -4,19 +4,15 @@ using Amazon.Lambda.Core;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GitHubRepositories
+public class GitHubRepositories : GitHubApi
 {
+    readonly string _githubOrganizationName;
+    readonly string _environment;
 
-    ILambdaLogger _logger;
-    Settings _settings;
-    GitHubApi _githubApi;
-
-
-    public GitHubRepositories(Settings settings, ILambdaContext context)
+    public GitHubRepositories(Settings settings, ILambdaLogger logger) : base(settings, logger)
     {
-        _logger = context.Logger;
-        _settings = settings;
-        _githubApi = new GitHubApi(settings, context);
+        _githubOrganizationName = settings.GitHubOrganizationName;
+        _environment = settings.Environment;
     }
 
     // <summary>
@@ -26,19 +22,19 @@ public class GitHubRepositories
     {
         var targetRepositories = new List<GitRepository>();
 
-        var githubClient = await _githubApi.getGithubAPIClient();
-        var repositories = await GetOrganizationRepositories(_settings.GitHubOrganizationName);
+        var githubClient = await GetGithubAPIClient();
+        var repositories = await GetOrganizationRepositories(_githubOrganizationName);
 
         foreach (var repository in repositories)
         {
-            var repositoryEnvironment = await GetRepositoryEnvironment(_settings.GitHubOrganizationName, repository.Name, _settings.Environment);
+            var repositoryEnvironment = await GetRepositoryEnvironment(_githubOrganizationName, repository.Name, _environment);
             if (repositoryEnvironment != null)
             {
                 targetRepositories.Add(repository);
             }
         }
 
-        _logger.LogInformation($"Found {targetRepositories.Count} target repositories in organization {_settings.GitHubOrganizationName}");
+        _logger.LogInformation($"Found {targetRepositories.Count} target repositories in organization {_githubOrganizationName}");
 
         return targetRepositories;
     }
@@ -48,7 +44,7 @@ public class GitHubRepositories
     // </summary>
     async Task<List<GitRepository>> GetOrganizationRepositories(string organizationName)
     {
-        var githubClient = await _githubApi.getGithubAPIClient();
+        var githubClient = await GetGithubAPIClient();
 
         var gitRepositories = new List<GitRepository>();
         var perPage = 100;
@@ -81,7 +77,7 @@ public class GitHubRepositories
 
     async Task<GitHubResourcePackage?> GetRepositoryEnvironment(string organizationName, string repositoryName, string environment)
     {
-        var githubClient = await _githubApi.getGithubAPIClient();
+        var githubClient = await GetGithubAPIClient();
 
         var uri = $"/repos/{organizationName}/{repositoryName}/environments/{environment}";
 

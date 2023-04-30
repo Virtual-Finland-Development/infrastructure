@@ -11,12 +11,12 @@ class CredentialsPublisher
     GithubSecrets _githubSecrets;
     GitHubRepositories _githubRepositories;
 
-    public CredentialsPublisher(Settings settings, ILambdaContext context)
+    public CredentialsPublisher(Settings settings, ILambdaLogger logger)
     {
         _settings = settings;
-        _logger = context.Logger;
-        _githubSecrets = new GithubSecrets(settings, context);
-        _githubRepositories = new GitHubRepositories(settings, context);
+        _logger = logger;
+        _githubSecrets = new GithubSecrets(settings, logger);
+        _githubRepositories = new GitHubRepositories(settings, logger);
     }
 
     public async Task PublishAccessKey(AccessKey accessKey)

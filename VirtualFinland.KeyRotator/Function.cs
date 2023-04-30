@@ -7,11 +7,12 @@ public class Function
 {
     public async Task FunctionHandler(ILambdaContext context)
     {
-        var settings = GetSettings();
-        var rotator = new AccessKeyRotator(context);
-        var credentialsPublisher = new CredentialsPublisher(settings, context);
+        var logger = context.Logger;
+        var settings = ResolveSettings();
+        var rotator = new AccessKeyRotator(settings, logger);
+        var credentialsPublisher = new CredentialsPublisher(settings, logger);
 
-        var newKey = rotator.RotateAccessKey(settings);
+        var newKey = rotator.RotateAccessKey();
         if (newKey != null)
         {
             // Publish new key to the pipelines
@@ -20,7 +21,7 @@ public class Function
         context.Logger.LogInformation("Key rotations completed");
     }
 
-    Settings GetSettings()
+    Settings ResolveSettings()
     {
         var inputObject = new Settings()
         {

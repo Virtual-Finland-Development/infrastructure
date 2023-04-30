@@ -6,22 +6,24 @@ using Amazon.SecretsManager.Model;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GitHubApi
+public abstract class GitHubApi
 {
     static HttpClient? _httpClient;
-    ILambdaLogger _logger;
-    Settings _settings;
+    public ILambdaLogger _logger;
+    protected readonly string _awsSecretName;
+    protected readonly string _awsSecretRegion;
 
-    public GitHubApi(Settings settings, ILambdaContext context)
+    public GitHubApi(Settings settings, ILambdaLogger logger)
     {
-        _logger = context.Logger;
-        _settings = settings;
+        _logger = logger;
+        _awsSecretName = settings.SecretName;
+        _awsSecretRegion = settings.SecretRegion;
     }
 
     // <summary>
     // Get a http client with authorization headers for github api
     // </summary>
-    public async Task<HttpClient> getGithubAPIClient()
+    public async Task<HttpClient> GetGithubAPIClient()
     {
         if (_httpClient == null)
         {
@@ -42,14 +44,12 @@ public class GitHubApi
     async Task<string> GetGithubAccessToken()
     {
         _logger.LogInformation($"Getting github access token from AWS Secrets Manager");
-        string secretName = _settings.SecretName;
-        string region = _settings.SecretRegion;
 
-        IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(region));
+        IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(_awsSecretRegion));
 
         GetSecretValueRequest request = new GetSecretValueRequest
         {
-            SecretId = secretName,
+            SecretId = _awsSecretName,
             VersionStage = "AWSCURRENT", // VersionStage defaults to AWSCURRENT if unspecified.
         };
 
