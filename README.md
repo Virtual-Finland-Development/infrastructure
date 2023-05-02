@@ -24,13 +24,6 @@ https://www.pulumi.com/docs/intro/concepts/secrets/
 https://www.pulumi.com/docs/intro/concepts/config/  
 https://www.pulumi.com/docs/intro/concepts/inputs-outputs/
 
-### Project structure
-
-- Stacks folder: Contains stacks that are to be provisioned by the Pulumi IaC tool
-- Testing folder: Contains tests on the stacks that are to be provisioned
-- Pulumi primary configration file: **Pulumi.yml**
-- Pulumi stack configuration files: **Pulumi.\*.yml**
-
 ### Pulumi basic commands
 
 - "pulumi preview": reads you stacks and generates a preview of to be provisioned resources
