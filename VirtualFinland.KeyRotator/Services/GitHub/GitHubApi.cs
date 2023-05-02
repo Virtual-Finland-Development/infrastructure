@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Amazon;
 using Amazon.Lambda.Core;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
@@ -9,14 +8,16 @@ namespace VirtualFinland.KeyRotator.Services.GitHub;
 public abstract class GitHubApi
 {
     public IHttpClientFactory _httpClientFactory;
+    public IAmazonSecretsManager _secretsManagerClient;
     static HttpClient? _httpClient;
     public ILambdaLogger _logger;
     protected readonly string _awsSecretName;
     protected readonly string _awsSecretRegion;
 
-    public GitHubApi(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger)
+    public GitHubApi(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger)
     {
         _httpClientFactory = httpClientFactory;
+        _secretsManagerClient = secretsManagerClient;
         _logger = logger;
         _awsSecretName = settings.SecretName;
         _awsSecretRegion = settings.SecretRegion;
@@ -45,9 +46,7 @@ public abstract class GitHubApi
     /// </summary>
     async Task<string> GetGithubAccessToken()
     {
-        _logger.LogInformation($"Retrieving GitHub access token from AWS Secrets Manager");
-
-        IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(_awsSecretRegion));
+        _logger.LogInformation("Retrieving GitHub access token from AWS Secrets Manager");
 
         GetSecretValueRequest request = new GetSecretValueRequest
         {
@@ -57,16 +56,9 @@ public abstract class GitHubApi
 
         GetSecretValueResponse response;
 
-        try
-        {
-            response = await client.GetSecretValueAsync(request);
-        }
-        catch (Exception e)
-        {
-            // For a list of the exceptions thrown, see
-            // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
-            throw e;
-        }
+        // For a list of the exceptions thrown, see
+        // https://docs.aws.amazon.com/secretsmanager/latest/apireference/API_GetSecretValue.html
+        response = await _secretsManagerClient.GetSecretValueAsync(request);
 
         // Parse JSON response.
         var secretObject = JsonSerializer.Deserialize<Dictionary<string, string>>(response.SecretString);

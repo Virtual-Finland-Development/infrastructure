@@ -1,6 +1,8 @@
 using System.Text.Json.Serialization;
+using Amazon;
 using Amazon.IdentityManagement;
 using Amazon.Lambda.Core;
+using Amazon.SecretsManager;
 using Microsoft.Extensions.DependencyInjection;
 using VirtualFinland.KeyRotator.Services;
 
@@ -9,6 +11,7 @@ namespace VirtualFinland.KeyRotator;
 public class Function
 {
     AmazonIdentityManagementServiceClient _iamClient;
+    IAmazonSecretsManager _secretsManagerClient;
     IHttpClientFactory _httpClientFactory;
 
     /// <summary>
@@ -17,6 +20,7 @@ public class Function
     public Function()
     {
         _iamClient = new AmazonIdentityManagementServiceClient();
+        _secretsManagerClient = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(Environment.GetEnvironmentVariable("SECRET_REGION")));
         var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
         _httpClientFactory = serviceProvider.GetService<IHttpClientFactory>() ?? throw new NullReferenceException("IHttpClientFactory is null");
     }
@@ -24,9 +28,10 @@ public class Function
     /// <summary>
     /// Override for unit testing
     /// </summary>
-    public Function(AmazonIdentityManagementServiceClient iamClient, IHttpClientFactory httpClientFactory)
+    public Function(AmazonIdentityManagementServiceClient iamClient, IAmazonSecretsManager secretsManagerClient, IHttpClientFactory httpClientFactory)
     {
         _iamClient = iamClient;
+        _secretsManagerClient = secretsManagerClient;
         _httpClientFactory = httpClientFactory;
     }
 
@@ -39,7 +44,7 @@ public class Function
         var logger = context.Logger;
         var settings = ResolveSettings(input);
         var rotator = new AccessKeyRotator(_iamClient, settings, logger);
-        var credentialsPublisher = new CredentialsPublisher(_httpClientFactory, settings, logger);
+        var credentialsPublisher = new CredentialsPublisher(_httpClientFactory, _secretsManagerClient, settings, logger);
 
         var newKey = await rotator.RotateAccessKey();
         if (newKey != null)
@@ -57,7 +62,6 @@ public class Function
             IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty,
             Environment = input.Environment ?? Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty,
             SecretName = Environment.GetEnvironmentVariable("SECRET_NAME") ?? string.Empty,
-            SecretRegion = Environment.GetEnvironmentVariable("SECRET_REGION") ?? string.Empty,
             GitHubOrganizationName = input.GitHubOrganizationName ?? Environment.GetEnvironmentVariable("GITHUB_ORGANIZATION_NAME") ?? "Virtual-Finland-Development",
             GitHubRepositoryNames = input.GitHubRepositoryNames?.Split(',')?.ToList() ?? Environment.GetEnvironmentVariable("GITHUB_REPOSITORY_NAMES")?.Split(',')?.ToList() ?? new List<string>()
         };

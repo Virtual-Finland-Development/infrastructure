@@ -1,13 +1,14 @@
 using System.Text;
 using System.Text.Json;
 using Amazon.Lambda.Core;
+using Amazon.SecretsManager;
 using Sodium;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
 public class GitHubSecrets : GitHubApi
 {
-    public GitHubSecrets(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger) : base(httpClientFactory, settings, logger)
+    public GitHubSecrets(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger) : base(httpClientFactory, secretsManagerClient, settings, logger)
     {
     }
 
@@ -18,7 +19,6 @@ public class GitHubSecrets : GitHubApi
     {
         var publicKeyPackage = await GetPublicKeyPackage(repositoryId, environment);
         var secretPackage = MakeSecretPackage(secretValue, publicKeyPackage);
-
         await PutCreateOrUpdateEnvironmentSecret(repositoryId, environment, secretName, secretPackage);
     }
 

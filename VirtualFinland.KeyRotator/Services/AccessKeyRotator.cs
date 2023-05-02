@@ -43,7 +43,7 @@ class AccessKeyRotator
                 _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
             }
 
-            var result = await _iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
+            var result = await _iamClient.CreateAccessKeyAsync(new CreateAccessKeyRequest()
             {
                 UserName = _iamUserName
             });
@@ -59,7 +59,7 @@ class AccessKeyRotator
 
             if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Active)
             {
-                await _iamClient.UpdateAccessKeyAsync(new Amazon.IdentityManagement.Model.UpdateAccessKeyRequest()
+                await _iamClient.UpdateAccessKeyAsync(new UpdateAccessKeyRequest()
                 {
                     UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId,
@@ -69,7 +69,7 @@ class AccessKeyRotator
             }
             else if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Inactive)
             {
-                await _iamClient.DeleteAccessKeyAsync(new Amazon.IdentityManagement.Model.DeleteAccessKeyRequest()
+                await _iamClient.DeleteAccessKeyAsync(new DeleteAccessKeyRequest()
                 {
                     UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId

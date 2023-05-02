@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amazon.Lambda.Core;
+using Amazon.SecretsManager;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
@@ -10,7 +11,7 @@ public class GitHubRepositories : GitHubApi
     readonly string _environment;
     readonly List<string> _gitHubRepositoryNameFilterItems;
 
-    public GitHubRepositories(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger) : base(httpClientFactory, settings, logger)
+    public GitHubRepositories(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger) : base(httpClientFactory, secretsManagerClient, settings, logger)
     {
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;
