@@ -15,7 +15,7 @@ class AccessKeyRotator
     }
 
     /// <summary>
-    /// Rotates the access key for the IAM user
+    /// Rotates the access key for the IAM user. Full cycle is 3 runs: create, invalidate old, delete old
     /// </summary>
     /// <returns>
     /// The new access key if created, otherwise null
@@ -34,23 +34,21 @@ class AccessKeyRotator
             // Key rotation setup does not support more than 2 keys at a time
             throw new ArgumentException("Too many keys");
         }
-        else if (accessKeys.Count <= 1)
+        else if (accessKeys.Count <= 1) // Create new key 
         {
             if (accessKeys.Count == 1)
             {
                 _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
             }
 
-            // Craete new key 
             newlyCreatedAccessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
                 UserName = _iamUserName
             }).Result.AccessKey;
             _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
         }
-        else
+        else // Invalidate or delete the oldest key
         {
-            // Invalidate or delete the oldest key
             var newestKey = accessKeys.First();
             var oldestKey = accessKeys.Last();
             _logger.LogInformation($"Kept the newest key: {newestKey.AccessKeyId}");
