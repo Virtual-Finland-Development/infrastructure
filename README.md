@@ -6,6 +6,8 @@ The resource management is done using Infrastructure as Code tools **[Pulumi](ht
 
 Presently all provisioned are done to AWS and has the following resources:  
 * AWS VPC
+* AWS IAM users and roles for the CI/CD-pipeline credentials management
+
 ## Infrastructure provisioning
 
 The provisioning happens using a combination of the Pulumi Service and Github Pulumi Actions. The process is automatic triggered by changes in the main branch.
