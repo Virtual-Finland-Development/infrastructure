@@ -8,13 +8,15 @@ namespace VirtualFinland.KeyRotator.Services.GitHub;
 
 public abstract class GitHubApi
 {
+    public IHttpClientFactory _httpClientFactory;
     static HttpClient? _httpClient;
     public ILambdaLogger _logger;
     protected readonly string _awsSecretName;
     protected readonly string _awsSecretRegion;
 
-    public GitHubApi(Settings settings, ILambdaLogger logger)
+    public GitHubApi(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger)
     {
+        _httpClientFactory = httpClientFactory;
         _logger = logger;
         _awsSecretName = settings.SecretName;
         _awsSecretRegion = settings.SecretRegion;
@@ -28,7 +30,7 @@ public abstract class GitHubApi
         if (_httpClient == null)
         {
             // Setup HttpClient with default headers for github api
-            _httpClient = new HttpClient();
+            _httpClient = _httpClientFactory.CreateClient();
             _httpClient.BaseAddress = new Uri("https://api.github.com");
             _httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
             _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
@@ -43,7 +45,7 @@ public abstract class GitHubApi
     /// </summary>
     async Task<string> GetGithubAccessToken()
     {
-        _logger.LogInformation($"Getting github access token from AWS Secrets Manager");
+        _logger.LogInformation($"Retrieving GitHub access token from AWS Secrets Manager");
 
         IAmazonSecretsManager client = new AmazonSecretsManagerClient(RegionEndpoint.GetBySystemName(_awsSecretRegion));
 

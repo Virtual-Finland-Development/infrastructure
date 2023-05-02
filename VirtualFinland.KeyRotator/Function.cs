@@ -1,21 +1,47 @@
 using System.Text.Json.Serialization;
+using Amazon.IdentityManagement;
 using Amazon.Lambda.Core;
+using Microsoft.Extensions.DependencyInjection;
 using VirtualFinland.KeyRotator.Services;
 
 namespace VirtualFinland.KeyRotator;
 
 public class Function
 {
+    AmazonIdentityManagementServiceClient _iamClient;
+    IHttpClientFactory _httpClientFactory;
+
+    /// <summary>
+    /// Default constructor that Lambda will invoke on instantiation.
+    /// </summary>
+    public Function()
+    {
+        _iamClient = new AmazonIdentityManagementServiceClient();
+        var serviceProvider = new ServiceCollection().AddHttpClient().BuildServiceProvider();
+        _httpClientFactory = serviceProvider.GetService<IHttpClientFactory>() ?? throw new NullReferenceException("IHttpClientFactory is null");
+    }
+
+    /// <summary>
+    /// Override for unit testing
+    /// </summary>
+    public Function(AmazonIdentityManagementServiceClient iamClient, IHttpClientFactory httpClientFactory)
+    {
+        _iamClient = iamClient;
+        _httpClientFactory = httpClientFactory;
+    }
+
+    /// <summary>
+    /// A Lambda function that rotates the access key for the IAM user. Full cycle is 3 runs: create, invalidate old, delete old
+    /// </summary>
     [LambdaSerializer(typeof(Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer))]
     public async Task FunctionHandler(LambdaEventInput input, ILambdaContext context)
     {
-
         var logger = context.Logger;
         var settings = ResolveSettings(input);
-        var rotator = new AccessKeyRotator(settings, logger);
-        var credentialsPublisher = new CredentialsPublisher(settings, logger);
+        var rotator = new AccessKeyRotator(_iamClient, settings, logger);
+        var credentialsPublisher = new CredentialsPublisher(_httpClientFactory, settings, logger);
 
-        var newKey = rotator.RotateAccessKey();
+        var newKey = await rotator.RotateAccessKey();
         if (newKey != null)
         {
             // Publish new key to the pipelines
@@ -24,7 +50,7 @@ public class Function
         context.Logger.LogInformation("Key rotations completed");
     }
 
-    Settings ResolveSettings(LambdaEventInput input)
+    public Settings ResolveSettings(LambdaEventInput input)
     {
         var inputObject = new Settings()
         {

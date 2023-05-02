@@ -10,7 +10,7 @@ public class GitHubRepositories : GitHubApi
     readonly string _environment;
     readonly List<string> _gitHubRepositoryNameFilterItems;
 
-    public GitHubRepositories(Settings settings, ILambdaLogger logger) : base(settings, logger)
+    public GitHubRepositories(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger) : base(httpClientFactory, settings, logger)
     {
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;

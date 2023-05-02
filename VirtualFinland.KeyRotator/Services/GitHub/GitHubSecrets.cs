@@ -7,7 +7,7 @@ namespace VirtualFinland.KeyRotator.Services.GitHub;
 
 public class GitHubSecrets : GitHubApi
 {
-    public GitHubSecrets(Settings settings, ILambdaLogger logger) : base(settings, logger)
+    public GitHubSecrets(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger) : base(httpClientFactory, settings, logger)
     {
     }
 

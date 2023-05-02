@@ -11,12 +11,12 @@ class CredentialsPublisher
     GitHubSecrets _gitHubSecrets;
     GitHubRepositories _gitHubRepositories;
 
-    public CredentialsPublisher(Settings settings, ILambdaLogger logger)
+    public CredentialsPublisher(IHttpClientFactory httpClientFactory, Settings settings, ILambdaLogger logger)
     {
         _settings = settings;
         _logger = logger;
-        _gitHubSecrets = new GitHubSecrets(settings, logger);
-        _gitHubRepositories = new GitHubRepositories(settings, logger);
+        _gitHubSecrets = new GitHubSecrets(httpClientFactory, settings, logger);
+        _gitHubRepositories = new GitHubRepositories(httpClientFactory, settings, logger);
     }
 
     public async Task PublishAccessKey(AccessKey accessKey)

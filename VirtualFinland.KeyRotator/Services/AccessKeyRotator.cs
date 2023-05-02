@@ -1,3 +1,4 @@
+using Amazon.IdentityManagement;
 using Amazon.IdentityManagement.Model;
 using Amazon.Lambda.Core;
 
@@ -7,9 +8,11 @@ class AccessKeyRotator
 {
     readonly string _iamUserName;
     ILambdaLogger _logger;
+    AmazonIdentityManagementServiceClient _iamClient;
 
-    public AccessKeyRotator(Settings settings, ILambdaLogger logger)
+    public AccessKeyRotator(AmazonIdentityManagementServiceClient iamClient, Settings settings, ILambdaLogger logger)
     {
+        _iamClient = iamClient;
         _iamUserName = settings.IAMUserName;
         _logger = logger;
     }
@@ -20,13 +23,12 @@ class AccessKeyRotator
     /// <returns>
     /// The new access key if created, otherwise null
     /// </returns>
-    public AccessKey? RotateAccessKey()
+    public async Task<AccessKey?> RotateAccessKey()
     {
         AccessKey? newlyCreatedAccessKey = null;
-        var iamClient = new Amazon.IdentityManagement.AmazonIdentityManagementServiceClient();
 
         // Obtain the access keys for the user
-        var accessKeys = RetrieveIAMAccessKeys(iamClient);
+        var accessKeys = await RetrieveIAMAccessKeys(_iamClient);
         _logger.LogInformation($"Access keys count: {accessKeys.Count}");
 
         if (accessKeys.Count > 2)
@@ -41,10 +43,12 @@ class AccessKeyRotator
                 _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
             }
 
-            newlyCreatedAccessKey = iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
+            var result = await _iamClient.CreateAccessKeyAsync(new Amazon.IdentityManagement.Model.CreateAccessKeyRequest()
             {
                 UserName = _iamUserName
-            }).Result.AccessKey;
+            });
+
+            newlyCreatedAccessKey = result.AccessKey;
             _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
         }
         else // Invalidate or delete the oldest key
@@ -55,21 +59,21 @@ class AccessKeyRotator
 
             if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Active)
             {
-                iamClient.UpdateAccessKeyAsync(new Amazon.IdentityManagement.Model.UpdateAccessKeyRequest()
+                await _iamClient.UpdateAccessKeyAsync(new Amazon.IdentityManagement.Model.UpdateAccessKeyRequest()
                 {
                     UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId,
                     Status = Amazon.IdentityManagement.StatusType.Inactive
-                }).Wait();
+                });
                 _logger.LogInformation($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
             }
             else if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Inactive)
             {
-                iamClient.DeleteAccessKeyAsync(new Amazon.IdentityManagement.Model.DeleteAccessKeyRequest()
+                await _iamClient.DeleteAccessKeyAsync(new Amazon.IdentityManagement.Model.DeleteAccessKeyRequest()
                 {
                     UserName = _iamUserName,
                     AccessKeyId = oldestKey.AccessKeyId
-                }).Wait();
+                });
                 _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");
             }
             else
@@ -84,17 +88,14 @@ class AccessKeyRotator
     /// <summary>
     /// Retrieve the access keys and sort by creation date, newest first
     /// </summary>
-    List<AccessKeyMetadata> RetrieveIAMAccessKeys(Amazon.IdentityManagement.AmazonIdentityManagementServiceClient iamClient)
+    async Task<List<AccessKeyMetadata>> RetrieveIAMAccessKeys(AmazonIdentityManagementServiceClient iamClient)
     {
-        var accessKeys = iamClient.ListAccessKeysAsync(new Amazon.IdentityManagement.Model.ListAccessKeysRequest()
+        var response = await iamClient.ListAccessKeysAsync(new ListAccessKeysRequest()
         {
             UserName = _iamUserName
-        }).Result.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList();
+        });
 
-        if (accessKeys == null)
-        {
-            throw new ArgumentException("Error in retrieving access keys");
-        }
+        var accessKeys = response?.AccessKeyMetadata.OrderByDescending(x => x.CreateDate).ToList() ?? throw new ArgumentException("Error in retrieving access keys");
 
         return accessKeys;
     }
