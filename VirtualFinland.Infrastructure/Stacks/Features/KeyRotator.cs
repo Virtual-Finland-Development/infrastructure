@@ -34,7 +34,7 @@ public class KeyRotator
             }
         });
 
-        // Get aws account id using pulumi aws native
+        // Resolve AWS account id
         var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
 
         var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
@@ -62,7 +62,7 @@ public class KeyRotator
         //
         // Setup roles and policies
         //
-        var keyRotarorExecRole = new Role($"cicd-key-rotator-exec-role-{environment}", new RoleArgs
+        var keyRotatorExecRole = new Role($"cicd-key-rotator-exec-role-{environment}", new RoleArgs
         {
             AssumeRolePolicy = JsonSerializer.Serialize(new Dictionary<string, object?>
             {
@@ -87,7 +87,7 @@ public class KeyRotator
             })
         });
 
-        var keyRotarorPolicy = new Pulumi.Aws.Iam.Policy($"cicd-key-rotator-policy-{environment}", new()
+        var keyRotatorPolicy = new Pulumi.Aws.Iam.Policy($"cicd-key-rotator-policy-{environment}", new()
         {
             Description = "Allow full control of the IAM user's access keys.",
             PolicyDocument = JsonSerializer.Serialize(new Dictionary<string, object?>
@@ -114,8 +114,8 @@ public class KeyRotator
         // Attach policy to role
         new RolePolicyAttachment($"cicd-key-rotator-policy-attachment-{environment}", new()
         {
-            Role = keyRotarorExecRole.Name,
-            PolicyArn = keyRotarorPolicy.Arn,
+            Role = keyRotatorExecRole.Name,
+            PolicyArn = keyRotatorPolicy.Arn,
         });
 
         // Create / attach to secret manager
@@ -130,7 +130,7 @@ public class KeyRotator
         });
 
         // Secrets manager policy
-        var keyRotarorSecretsManagerPolicy = new Pulumi.Aws.Iam.Policy($"cicd-key-rotator-secrets-manager-policy-{environment}", new()
+        var keyRotatorSecretsManagerPolicy = new Pulumi.Aws.Iam.Policy($"cicd-key-rotator-secrets-manager-policy-{environment}", new()
         {
             Description = "Read permissions to the secrets manager",
             PolicyDocument = Output.Format($@"{{
@@ -150,14 +150,14 @@ public class KeyRotator
         });
         new RolePolicyAttachment($"cicd-key-rotator-secrets-manager-policy-attachment-{environment}", new()
         {
-            Role = keyRotarorExecRole.Name,
-            PolicyArn = keyRotarorSecretsManagerPolicy.Arn,
+            Role = keyRotatorExecRole.Name,
+            PolicyArn = keyRotatorSecretsManagerPolicy.Arn,
         });
 
         // Attach basic execution role so that lambda can write logs
-        var keyRotarorBasicExecutionPolicyAttachment = new RolePolicyAttachment($"cicd-key-rotator-basic-execution-policy-attachment-{environment}", new()
+        var keyRotatorBasicExecutionPolicyAttachment = new RolePolicyAttachment($"cicd-key-rotator-basic-execution-policy-attachment-{environment}", new()
         {
-            Role = keyRotarorExecRole.Name,
+            Role = keyRotatorExecRole.Name,
             PolicyArn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
         });
 
@@ -169,7 +169,7 @@ public class KeyRotator
         var artifactPath = "../VirtualFinland.KeyRotator/release";
         var keyRotator = new Function($"cicd-key-rotator-{environment}", new FunctionArgs
         {
-            Role = keyRotarorExecRole.Arn,
+            Role = keyRotatorExecRole.Arn,
             Runtime = "dotnet6",
             Handler = "VirtualFinland.KeyRotator::VirtualFinland.KeyRotator.Function::FunctionHandler",
             Timeout = 240,
