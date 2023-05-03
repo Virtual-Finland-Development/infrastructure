@@ -7,9 +7,9 @@ namespace VirtualFinland.KeyRotator.Services.GitHub;
 
 public class GitHubRepositories : GitHubApi
 {
-    readonly string _githubOrganizationName;
-    readonly string _environment;
-    readonly List<string> _gitHubRepositoryNameFilterItems;
+    private readonly string _githubOrganizationName;
+    private readonly string _environment;
+    private readonly List<string> _gitHubRepositoryNameFilterItems;
 
     public GitHubRepositories(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger) : base(httpClientFactory, secretsManagerClient, settings, logger)
     {
@@ -24,8 +24,6 @@ public class GitHubRepositories : GitHubApi
     public async Task<List<GitRepository>> GetTargetRepositories()
     {
         var targetRepositories = new List<GitRepository>();
-
-        var githubClient = await GetGithubAPIClient();
         var repositories = await GetOrganizationRepositories(_githubOrganizationName);
 
         if (_gitHubRepositoryNameFilterItems.Any())
@@ -51,7 +49,7 @@ public class GitHubRepositories : GitHubApi
     /// <summary>
     /// https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
     /// </summary>
-    async Task<List<GitRepository>> GetOrganizationRepositories(string organizationName)
+    private async Task<List<GitRepository>> GetOrganizationRepositories(string organizationName)
     {
         var githubClient = await GetGithubAPIClient();
 
@@ -84,7 +82,7 @@ public class GitHubRepositories : GitHubApi
         return gitRepositories;
     }
 
-    async Task<GitHubResourcePackage?> GetRepositoryEnvironment(string organizationName, string repositoryName, string environment)
+    private async Task<GitHubResourcePackage?> GetRepositoryEnvironment(string organizationName, string repositoryName, string environment)
     {
         var githubClient = await GetGithubAPIClient();
 

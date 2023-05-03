@@ -7,12 +7,11 @@ namespace VirtualFinland.KeyRotator.Services.GitHub;
 
 public abstract class GitHubApi
 {
-    public IHttpClientFactory _httpClientFactory;
-    public IAmazonSecretsManager _secretsManagerClient;
-    static HttpClient? _httpClient;
-    public ILambdaLogger _logger;
-    protected readonly string _awsSecretName;
-    protected readonly string _awsSecretRegion;
+    private IHttpClientFactory _httpClientFactory;
+    private IAmazonSecretsManager _secretsManagerClient;
+    private static HttpClient? _httpClient;
+    protected ILambdaLogger _logger;
+    private readonly string _awsSecretName;
 
     public GitHubApi(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger)
     {
@@ -20,7 +19,6 @@ public abstract class GitHubApi
         _secretsManagerClient = secretsManagerClient;
         _logger = logger;
         _awsSecretName = settings.SecretName;
-        _awsSecretRegion = settings.SecretRegion;
     }
 
     /// <summary>
@@ -44,7 +42,7 @@ public abstract class GitHubApi
     /// <summary>
     /// Get a github access token from AWS Secrets Manager
     /// </summary>
-    async Task<string> GetGithubAccessToken()
+    private async Task<string> GetGithubAccessToken()
     {
         _logger.LogInformation("Retrieving GitHub access token from AWS Secrets Manager");
 

@@ -6,9 +6,9 @@ namespace VirtualFinland.KeyRotator.Services;
 
 class AccessKeyRotator
 {
-    readonly string _iamUserName;
-    ILambdaLogger _logger;
-    AmazonIdentityManagementServiceClient _iamClient;
+    private readonly string _iamUserName;
+    private ILambdaLogger _logger;
+    private AmazonIdentityManagementServiceClient _iamClient;
 
     public AccessKeyRotator(AmazonIdentityManagementServiceClient iamClient, Settings settings, ILambdaLogger logger)
     {
@@ -28,7 +28,7 @@ class AccessKeyRotator
         AccessKey? newlyCreatedAccessKey = null;
 
         // Obtain the access keys for the user
-        var accessKeys = await RetrieveIAMAccessKeys(_iamClient);
+        var accessKeys = await RetrieveIAMAccessKeys();
         _logger.LogInformation($"Access keys count: {accessKeys.Count}");
 
         if (accessKeys.Count > 2)
@@ -88,9 +88,9 @@ class AccessKeyRotator
     /// <summary>
     /// Retrieve the access keys and sort by creation date, newest first
     /// </summary>
-    async Task<List<AccessKeyMetadata>> RetrieveIAMAccessKeys(AmazonIdentityManagementServiceClient iamClient)
+    private async Task<List<AccessKeyMetadata>> RetrieveIAMAccessKeys()
     {
-        var response = await iamClient.ListAccessKeysAsync(new ListAccessKeysRequest()
+        var response = await _iamClient.ListAccessKeysAsync(new ListAccessKeysRequest()
         {
             UserName = _iamUserName
         });

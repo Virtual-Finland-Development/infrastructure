@@ -5,6 +5,7 @@ using Amazon.Lambda.Core;
 using Amazon.SecretsManager;
 using Microsoft.Extensions.DependencyInjection;
 using VirtualFinland.KeyRotator.Services;
+using VirtualFinland.KeyRotator.Services.GitHub;
 
 namespace VirtualFinland.KeyRotator;
 
@@ -44,7 +45,10 @@ public class Function
         var logger = context.Logger;
         var settings = ResolveSettings(input);
         var rotator = new AccessKeyRotator(_iamClient, settings, logger);
-        var credentialsPublisher = new CredentialsPublisher(_httpClientFactory, _secretsManagerClient, settings, logger);
+
+        var gitHubSecrets = new GitHubSecrets(_httpClientFactory, _secretsManagerClient, settings, logger);
+        var gitHubRepositories = new GitHubRepositories(_httpClientFactory, _secretsManagerClient, settings, logger);
+        var credentialsPublisher = new CredentialsPublisher(gitHubSecrets, gitHubRepositories, settings, logger);
 
         var newKey = await rotator.RotateAccessKey();
         if (newKey != null)

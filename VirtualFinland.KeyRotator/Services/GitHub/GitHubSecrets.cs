@@ -25,7 +25,7 @@ public class GitHubSecrets : GitHubApi
     /// <summary>
     /// @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#get-an-environment-public-key
     /// </summary>
-    async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
+    private async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
     {
         var githubClient = await GetGithubAPIClient();
         var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
@@ -48,7 +48,7 @@ public class GitHubSecrets : GitHubApi
     /// @see: https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-a-repository-secret
     /// @see: https://github.com/octokit/octokit.net/blob/a3299ac4b45bed5e12be61376748c1533b4627cd/Octokit.Tests.Integration/Clients/RespositorySecretsClientTests.cs#L111
     /// </summary>
-    UpsertRepositorySecretPackage MakeSecretPackage(string secretValue, PublicKeyPackage publicKeyPackage)
+    private UpsertRepositorySecretPackage MakeSecretPackage(string secretValue, PublicKeyPackage publicKeyPackage)
     {
         var secretBytes = Encoding.UTF8.GetBytes(secretValue);
         var publicKey = Convert.FromBase64String(publicKeyPackage.key ?? throw new ArgumentNullException("Public key is null"));
@@ -60,7 +60,7 @@ public class GitHubSecrets : GitHubApi
     // <summary>
     // https://docs.github.com/en/rest/actions/secrets?apiVersion=2022-11-28#create-or-update-an-environment-secret
     // </summary>
-    async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secretPackage)
+    private async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secretPackage)
     {
         var githubClient = await GetGithubAPIClient();
 
