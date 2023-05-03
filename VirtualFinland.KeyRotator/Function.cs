@@ -51,13 +51,24 @@ public class Function
 
         var credentialsPublisher = new CredentialsPublisher(gitHubApi, settings, logger);
 
-        var newKey = await rotator.RotateAccessKey();
-        if (newKey != null)
+        switch (input.Action)
         {
-            // Publish new key to the pipelines
-            await credentialsPublisher.PublishAccessKey(newKey);
+            case EventAction.Rotate:
+                var newKey = await rotator.RotateAccessKey();
+                if (newKey != null)
+                {
+                    // Publish new key to the pipelines
+                    await credentialsPublisher.PublishAccessKey(newKey);
+                }
+                context.Logger.LogInformation("Key rotations completed");
+                break;
+            case EventAction.Regenerate:
+                var recreatedKey = await rotator.RegenerateAccessKey();
+                await credentialsPublisher.PublishAccessKey(recreatedKey);
+                break;
+            default:
+                throw new ArgumentException($"Invalid action: {input.Action}");
         }
-        context.Logger.LogInformation("Key rotations completed");
     }
 
     public Settings ResolveSettings(LambdaEventInput input)
@@ -82,6 +93,16 @@ public class Function
         public string? GitHubOrganizationName { get; set; }
         [JsonPropertyName("GITHUB_REPOSITORY_NAMES")]
         public string? GitHubRepositoryNames { get; set; }
+        [JsonPropertyName("ACTION")]
+        public EventAction Action { get; set; } = EventAction.Rotate;
+    }
+
+    public enum EventAction
+    {
+        [JsonPropertyName("rotate")]
+        Rotate,
+        [JsonPropertyName("regenerate")]
+        Regenerate
     }
 }
 

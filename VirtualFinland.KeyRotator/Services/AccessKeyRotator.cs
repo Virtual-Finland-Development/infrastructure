@@ -27,7 +27,6 @@ class AccessKeyRotator
     {
         AccessKey? newlyCreatedAccessKey = null;
 
-        // Obtain the access keys for the user
         var accessKeys = await RetrieveIAMAccessKeys();
         _logger.LogInformation($"Access keys count: {accessKeys.Count}");
 
@@ -56,33 +55,68 @@ class AccessKeyRotator
                 var newestKey = accessKeys.First();
                 var oldestKey = accessKeys.Last();
                 _logger.LogInformation($"Kept the newest key: {newestKey.AccessKeyId}");
-
-                switch (oldestKey.Status.Value)
-                {
-                    case "Active":
-                        await _iamClient.UpdateAccessKeyAsync(new UpdateAccessKeyRequest()
-                        {
-                            UserName = _iamUserName,
-                            AccessKeyId = oldestKey.AccessKeyId,
-                            Status = Amazon.IdentityManagement.StatusType.Inactive
-                        });
-                        _logger.LogInformation($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
-                        break;
-                    case "Inactive":
-                        await _iamClient.DeleteAccessKeyAsync(new DeleteAccessKeyRequest()
-                        {
-                            UserName = _iamUserName,
-                            AccessKeyId = oldestKey.AccessKeyId
-                        });
-                        _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");
-                        break;
-                    default:
-                        throw new ArgumentException($"Unknown key status: {oldestKey.Status.Value}");
-                }
+                await CleanupOldAccessKey(oldestKey);
                 break;
         }
 
         return newlyCreatedAccessKey;
+    }
+
+    /// <summary>
+    /// Clears the old key(s), create new without a delay
+    /// </summary>
+    /// <returns>
+    /// The new access key
+    /// </returns>
+    public async Task<AccessKey> RegenerateAccessKey()
+    {
+        // Obtain the access keys for the user
+        var accessKeys = await RetrieveIAMAccessKeys();
+        _logger.LogInformation($"Old access keys count: {accessKeys.Count}");
+
+        foreach (var accessKey in accessKeys)
+        {
+            await CleanupOldAccessKey(accessKey);
+        }
+
+        var result = await _iamClient.CreateAccessKeyAsync(new CreateAccessKeyRequest()
+        {
+            UserName = _iamUserName
+        });
+
+        var newlyCreatedAccessKey = result.AccessKey;
+        _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
+
+        return newlyCreatedAccessKey;
+    }
+
+    /// <summary>
+    /// Deactivates active key, deletes inactive key
+    /// </summary>
+    private async Task CleanupOldAccessKey(AccessKeyMetadata oldKey)
+    {
+        switch (oldKey.Status.Value)
+        {
+            case "Active":
+                await _iamClient.UpdateAccessKeyAsync(new UpdateAccessKeyRequest()
+                {
+                    UserName = _iamUserName,
+                    AccessKeyId = oldKey.AccessKeyId,
+                    Status = Amazon.IdentityManagement.StatusType.Inactive
+                });
+                _logger.LogInformation($"Invalidated key: {oldKey.AccessKeyId}");
+                break;
+            case "Inactive":
+                await _iamClient.DeleteAccessKeyAsync(new DeleteAccessKeyRequest()
+                {
+                    UserName = _iamUserName,
+                    AccessKeyId = oldKey.AccessKeyId
+                });
+                _logger.LogInformation($"Deleted key: {oldKey.AccessKeyId}");
+                break;
+            default:
+                throw new ArgumentException($"Unknown key status: {oldKey.Status.Value}");
+        }
     }
 
     /// <summary>
