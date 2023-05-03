@@ -14,7 +14,6 @@ public class GitHubApi
     private ILambdaLogger _logger;
     private readonly string _awsSecretName;
 
-
     public GitHubApi(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger)
     {
         _gitHubApiClient = httpClientFactory.CreateClient();

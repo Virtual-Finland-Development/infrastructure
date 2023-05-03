@@ -44,11 +44,54 @@ public class KeyRotator
                 ""Version"": ""2012-10-17"",
                 ""Statement"": [
                     {{
+                        ""Sid"": ""GrantRoleAccess"",
                         ""Action"": [
                             ""sts:AssumeRole""
                         ],
                         ""Effect"": ""Allow"",
                         ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*""
+                    }},
+                    {{
+                        ""Sid"": ""GrantS3Access"",
+                        ""Action"": [
+                            ""s3:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*""
+                    }},
+                    {{
+                        ""Sid"": ""GrantCloudFrontAccess1"",
+                        ""Action"": [
+                            ""cloudfront:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*"",
+                        ""Condition"": {{
+                            ""StringEquals"": {{
+                                ""aws:ResourceTag/Environment"": ""{environment}""
+                            }}
+                        }}
+                    }},
+                    {{
+                        ""Sid"": ""GrantCloudFrontAccess2"",
+                        ""Action"": [
+                            ""cloudfront:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*"",
+                        ""Condition"": {{
+                            ""StringEquals"": {{
+                                ""aws:ResourceTag/vfd:stack"": ""{environment}""
+                            }}
+                        }}
+                    }},
+                    {{
+                        ""Sid"": ""GrantCloudWatchAccess"",
+                        ""Action"": [
+                            ""cloudwatch:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*""
                     }}
                 ]
             }}")
