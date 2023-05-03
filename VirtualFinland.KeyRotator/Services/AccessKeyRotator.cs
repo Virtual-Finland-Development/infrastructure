@@ -31,55 +31,55 @@ class AccessKeyRotator
         var accessKeys = await RetrieveIAMAccessKeys();
         _logger.LogInformation($"Access keys count: {accessKeys.Count}");
 
-        if (accessKeys.Count > 2)
+        switch (accessKeys.Count)
         {
-            // Key rotation setup does not support more than 2 keys at a time
-            throw new ArgumentException("Too many keys");
-        }
-        else if (accessKeys.Count <= 1) // Create new key 
-        {
-            if (accessKeys.Count == 1)
-            {
-                _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
-            }
-
-            var result = await _iamClient.CreateAccessKeyAsync(new CreateAccessKeyRequest()
-            {
-                UserName = _iamUserName
-            });
-
-            newlyCreatedAccessKey = result.AccessKey;
-            _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
-        }
-        else // Invalidate or delete the oldest key
-        {
-            var newestKey = accessKeys.First();
-            var oldestKey = accessKeys.Last();
-            _logger.LogInformation($"Kept the newest key: {newestKey.AccessKeyId}");
-
-            if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Active)
-            {
-                await _iamClient.UpdateAccessKeyAsync(new UpdateAccessKeyRequest()
+            case > 2:
+                // Key rotation setup does not support more than 2 keys at a time
+                throw new ArgumentException("Too many keys");
+            case <= 1:
+                // Create new key 
+                if (accessKeys.Count == 1)
                 {
-                    UserName = _iamUserName,
-                    AccessKeyId = oldestKey.AccessKeyId,
-                    Status = Amazon.IdentityManagement.StatusType.Inactive
-                });
-                _logger.LogInformation($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
-            }
-            else if (oldestKey.Status == Amazon.IdentityManagement.StatusType.Inactive)
-            {
-                await _iamClient.DeleteAccessKeyAsync(new DeleteAccessKeyRequest()
+                    _logger.LogInformation($"Kept the old key: {accessKeys[0].AccessKeyId}");
+                }
+
+                var result = await _iamClient.CreateAccessKeyAsync(new CreateAccessKeyRequest()
                 {
-                    UserName = _iamUserName,
-                    AccessKeyId = oldestKey.AccessKeyId
+                    UserName = _iamUserName
                 });
-                _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");
-            }
-            else
-            {
-                throw new ArgumentException("Unknown key status");
-            }
+
+                newlyCreatedAccessKey = result.AccessKey;
+                _logger.LogInformation($"New key created: {newlyCreatedAccessKey.AccessKeyId}");
+                break;
+            default:
+                // Invalidate or delete the oldest key
+                var newestKey = accessKeys.First();
+                var oldestKey = accessKeys.Last();
+                _logger.LogInformation($"Kept the newest key: {newestKey.AccessKeyId}");
+
+                switch (oldestKey.Status.Value)
+                {
+                    case "Active":
+                        await _iamClient.UpdateAccessKeyAsync(new UpdateAccessKeyRequest()
+                        {
+                            UserName = _iamUserName,
+                            AccessKeyId = oldestKey.AccessKeyId,
+                            Status = Amazon.IdentityManagement.StatusType.Inactive
+                        });
+                        _logger.LogInformation($"Invalidated the oldest key: {oldestKey.AccessKeyId}");
+                        break;
+                    case "Inactive":
+                        await _iamClient.DeleteAccessKeyAsync(new DeleteAccessKeyRequest()
+                        {
+                            UserName = _iamUserName,
+                            AccessKeyId = oldestKey.AccessKeyId
+                        });
+                        _logger.LogInformation($"Deleted the oldest key: {oldestKey.AccessKeyId}");
+                        break;
+                    default:
+                        throw new ArgumentException($"Unknown key status: {oldestKey.Status.Value}");
+                }
+                break;
         }
 
         return newlyCreatedAccessKey;
