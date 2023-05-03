@@ -46,9 +46,10 @@ public class Function
         var settings = ResolveSettings(input);
         var rotator = new AccessKeyRotator(_iamClient, settings, logger);
 
-        var gitHubSecrets = new GitHubSecrets(_httpClientFactory, _secretsManagerClient, settings, logger);
-        var gitHubRepositories = new GitHubRepositories(_httpClientFactory, _secretsManagerClient, settings, logger);
-        var credentialsPublisher = new CredentialsPublisher(gitHubSecrets, gitHubRepositories, settings, logger);
+        var gitHubApi = new GitHubApi(_httpClientFactory, _secretsManagerClient, settings, logger);
+        await gitHubApi.Initialize();
+
+        var credentialsPublisher = new CredentialsPublisher(gitHubApi, settings, logger);
 
         var newKey = await rotator.RotateAccessKey();
         if (newKey != null)

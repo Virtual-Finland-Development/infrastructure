@@ -5,38 +5,37 @@ using Amazon.SecretsManager.Model;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public abstract class GitHubApi
+public class GitHubApi
 {
-    private IHttpClientFactory _httpClientFactory;
+    public GitHubSecrets Secrets;
+    public GitHubRepositories Repositories;
+    private HttpClient _gitHubApiClient;
     private IAmazonSecretsManager _secretsManagerClient;
-    private static HttpClient? _httpClient;
-    protected ILambdaLogger _logger;
+    private ILambdaLogger _logger;
     private readonly string _awsSecretName;
+
 
     public GitHubApi(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger)
     {
-        _httpClientFactory = httpClientFactory;
+        _gitHubApiClient = httpClientFactory.CreateClient();
+        Secrets = new GitHubSecrets(_gitHubApiClient, logger);
+        Repositories = new GitHubRepositories(_gitHubApiClient, settings, logger);
         _secretsManagerClient = secretsManagerClient;
         _logger = logger;
         _awsSecretName = settings.SecretName;
     }
 
     /// <summary>
-    /// Get a http client with authorization headers for github api
+    /// Initialize GitHub API client
     /// </summary>
-    protected async Task<HttpClient> GetGithubAPIClient()
+    public async Task Initialize()
     {
-        if (_httpClient == null)
-        {
-            // Setup HttpClient with default headers for github api
-            _httpClient = _httpClientFactory.CreateClient();
-            _httpClient.BaseAddress = new Uri("https://api.github.com");
-            _httpClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
-            _httpClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "VirtualFinland.KeyRotator");
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetGithubAccessToken()}");
-        }
-        return _httpClient;
+        // Setup HttpClient with default headers for github api
+        _gitHubApiClient.BaseAddress = new Uri("https://api.github.com");
+        _gitHubApiClient.DefaultRequestHeaders.Add("Accept", "application/vnd.github+json");
+        _gitHubApiClient.DefaultRequestHeaders.Add("X-GitHub-Api-Version", "2022-11-28");
+        _gitHubApiClient.DefaultRequestHeaders.Add("User-Agent", "VirtualFinland.KeyRotator");
+        _gitHubApiClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {await GetGithubAccessToken()}");
     }
 
     /// <summary>

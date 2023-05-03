@@ -7,15 +7,13 @@ namespace VirtualFinland.KeyRotator.Services;
 class CredentialsPublisher
 {
     private ILambdaLogger _logger;
-    private GitHubSecrets _gitHubSecrets;
-    private GitHubRepositories _gitHubRepositories;
+    private GitHubApi _gitHubApi;
     private readonly string _githubOrganizationName;
     private readonly string _environment;
 
-    public CredentialsPublisher(GitHubSecrets gitHubSecrets, GitHubRepositories gitHubRepositories, Settings settings, ILambdaLogger logger)
+    public CredentialsPublisher(GitHubApi gitHubApi, Settings settings, ILambdaLogger logger)
     {
-        _gitHubSecrets = gitHubSecrets;
-        _gitHubRepositories = gitHubRepositories;
+        _gitHubApi = gitHubApi;
         _logger = logger;
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;
@@ -23,14 +21,14 @@ class CredentialsPublisher
 
     public async Task PublishAccessKey(AccessKey accessKey)
     {
-        var repositories = await _gitHubRepositories.GetTargetRepositories();
+        var repositories = await _gitHubApi.Repositories.GetTargetRepositories();
         _logger.LogInformation($"Publishing key {accessKey.AccessKeyId} to {repositories.Count} target repositories");
 
         foreach (var repository in repositories)
         {
             _logger.LogInformation($"Publishing to project {repository.Name} ..");
 
-            await _gitHubSecrets.CreateOrUpdateEnvironmentSecret(
+            await _gitHubApi.Secrets.CreateOrUpdateEnvironmentSecret(
                 _githubOrganizationName,
                 repository.Id,
                 _environment,
@@ -38,7 +36,7 @@ class CredentialsPublisher
                 accessKey.AccessKeyId
             );
 
-            await _gitHubSecrets.CreateOrUpdateEnvironmentSecret(
+            await _gitHubApi.Secrets.CreateOrUpdateEnvironmentSecret(
                 _githubOrganizationName,
                 repository.Id,
                 _environment,

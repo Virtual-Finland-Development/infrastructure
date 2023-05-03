@@ -1,21 +1,24 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amazon.Lambda.Core;
-using Amazon.SecretsManager;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GitHubRepositories : GitHubApi
+public partial class GitHubRepositories
 {
+    private readonly HttpClient _gitHubApiClient;
     private readonly string _githubOrganizationName;
     private readonly string _environment;
     private readonly List<string> _gitHubRepositoryNameFilterItems;
+    private ILambdaLogger _logger;
 
-    public GitHubRepositories(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger) : base(httpClientFactory, secretsManagerClient, settings, logger)
+    public GitHubRepositories(HttpClient gitHubApiClient, Settings settings, ILambdaLogger logger)
     {
+        _gitHubApiClient = gitHubApiClient;
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;
         _gitHubRepositoryNameFilterItems = settings.GitHubRepositoryNames;
+        _logger = logger;
     }
 
     /// <summary>
@@ -51,8 +54,6 @@ public class GitHubRepositories : GitHubApi
     /// </summary>
     private async Task<List<GitRepository>> GetOrganizationRepositories(string organizationName)
     {
-        var githubClient = await GetGithubAPIClient();
-
         var gitRepositories = new List<GitRepository>();
         var perPage = 100;
         var page = 1;
@@ -62,7 +63,7 @@ public class GitHubRepositories : GitHubApi
         while (true)
         {
             var uri = $"{baseUri}?per_page={perPage}&page={page}";
-            var response = await githubClient.GetAsync(uri);
+            var response = await _gitHubApiClient.GetAsync(uri);
             var responseBody = await response.Content.ReadAsStringAsync();
             if (!response.IsSuccessStatusCode)
             {
@@ -84,11 +85,9 @@ public class GitHubRepositories : GitHubApi
 
     private async Task<GitHubResourcePackage?> GetRepositoryEnvironment(string organizationName, string repositoryName, string environment)
     {
-        var githubClient = await GetGithubAPIClient();
-
         var uri = $"/repos/{organizationName}/{repositoryName}/environments/{environment}";
 
-        var response = await githubClient.GetAsync(uri);
+        var response = await _gitHubApiClient.GetAsync(uri);
         var responseBody = await response.Content.ReadAsStringAsync();
         if (response.IsSuccessStatusCode)
         {

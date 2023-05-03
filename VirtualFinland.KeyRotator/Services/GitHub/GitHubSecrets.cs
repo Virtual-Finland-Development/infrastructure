@@ -1,15 +1,19 @@
 using System.Text;
 using System.Text.Json;
 using Amazon.Lambda.Core;
-using Amazon.SecretsManager;
 using Sodium;
 
 namespace VirtualFinland.KeyRotator.Services.GitHub;
 
-public class GitHubSecrets : GitHubApi
+public class GitHubSecrets
 {
-    public GitHubSecrets(IHttpClientFactory httpClientFactory, IAmazonSecretsManager secretsManagerClient, Settings settings, ILambdaLogger logger) : base(httpClientFactory, secretsManagerClient, settings, logger)
+    private HttpClient _gitHubApiClient;
+    private ILambdaLogger _logger;
+
+    public GitHubSecrets(HttpClient gitHubApiClient, ILambdaLogger logger)
     {
+        _gitHubApiClient = gitHubApiClient;
+        _logger = logger;
     }
 
     /// <summary>
@@ -27,8 +31,7 @@ public class GitHubSecrets : GitHubApi
     /// </summary>
     private async Task<PublicKeyPackage> GetPublicKeyPackage(int repositoryId, string environment)
     {
-        var githubClient = await GetGithubAPIClient();
-        var response = await githubClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
+        var response = await _gitHubApiClient.GetAsync($"/repositories/{repositoryId}/environments/{environment}/secrets/public-key");
         var responseBody = await response.Content.ReadAsStringAsync();
         if (!response.IsSuccessStatusCode)
         {
@@ -62,13 +65,11 @@ public class GitHubSecrets : GitHubApi
     // </summary>
     private async Task PutCreateOrUpdateEnvironmentSecret(int repositoryId, string environment, string secretName, UpsertRepositorySecretPackage secretPackage)
     {
-        var githubClient = await GetGithubAPIClient();
-
         var uri = $"/repositories/{repositoryId}/environments/{environment}/secrets/{secretName}";
         var textContent = JsonSerializer.Serialize(secretPackage);
         var content = new StringContent(textContent, Encoding.UTF8, "application/json");
 
-        var response = await githubClient.PutAsync(uri, content);
+        var response = await _gitHubApiClient.PutAsync(uri, content);
         if (!response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
