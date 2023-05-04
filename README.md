@@ -13,6 +13,12 @@ Presently all provisioned are done to AWS and has the following resources:
 
 The provisioning happens using a combination of the Pulumi Service and Github Pulumi Actions. The process is automatic triggered by changes in the main branch.
 
+## Organization policy
+
+The organization policy is defined in the [./policypack](./policypack) folder. The policy is applied using the Pulumi Policy as Code tool. 
+
+Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossguard/
+
 ## Development guide
 
 If new to Pulumi, then read start here: https://www.pulumi.com/docs/get-started/aws/

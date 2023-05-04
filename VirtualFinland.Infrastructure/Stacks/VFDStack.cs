@@ -23,10 +23,10 @@ public class VFDStack : Stack
         InputMap<string> tags = new InputMap<string>()
         {
             {
-                "Environment", environment
+                "vfd:stack", environment
             },
             {
-                "Project", projectName
+                "vfd:project", projectName
             }
         };
 
