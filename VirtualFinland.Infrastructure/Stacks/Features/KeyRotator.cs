@@ -34,68 +34,20 @@ public class KeyRotator
             }
         });
 
-        // Resolve AWS account id
-        var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
-        var environmentTagName = "vfd:stack";
-
-        var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
+        new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
             Group = botUserGroup.Name,
-            Policy = currentAwsIdentity.Apply(r => $@"{{
+            Policy = $@"{{
                 ""Version"": ""2012-10-17"",
                 ""Statement"": [
                     {{
-                        ""Sid"": ""GrantRoleAccess"",
-                        ""Action"": [
-                            ""sts:AssumeRole""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*"",
-                        ""Condition"": {{
-                            ""StringEquals"": {{
-                                ""aws:ResourceTag/{environmentTagName}"": ""{environment}""
-                            }}
-                        }}
-                    }},
-                    {{
-                        ""Sid"": ""GrantVPCAccess"",
-                        ""Action"": [
-                            ""vpc:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*""
-                    }},
-                    {{
-                        ""Sid"": ""GrantS3Access"",
-                        ""Action"": [
-                            ""s3:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*""
-                    }},
-                    {{
-                        ""Sid"": ""GrantCloudFrontAccess"",
-                        ""Action"": [
-                            ""cloudfront:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*"",
-                        ""Condition"": {{
-                            ""StringEquals"": {{
-                                ""aws:ResourceTag/{environmentTagName}"": ""{environment}""
-                            }}
-                        }}
-                    }},
-                    {{
-                        ""Sid"": ""GrantCloudWatchAccess"",
-                        ""Action"": [
-                            ""cloudwatch:*""
-                        ],
+                        ""Sid"": ""GrantAdminAccess"",
+                        ""Action"": ""*"",
                         ""Effect"": ""Allow"",
                         ""Resource"": ""*""
                     }}
                 ]
-            }}")
+            }}"
         });
 
         return botUser;
