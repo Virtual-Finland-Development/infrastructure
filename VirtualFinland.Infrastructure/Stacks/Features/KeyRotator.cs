@@ -36,7 +36,7 @@ public class KeyRotator
 
         // Resolve AWS account id
         var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
-        var resourceTagForEnvironment = "vfd:stack";
+        var environmentTagName = "vfd:stack";
 
         var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
@@ -53,22 +53,46 @@ public class KeyRotator
                         ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*"",
                         ""Condition"": {{
                             ""StringEquals"": {{
-                                ""aws:ResourceTag/{resourceTagForEnvironment}"": ""{environment}""
+                                ""aws:ResourceTag/{environmentTagName}"": ""{environment}""
                             }}
                         }}
                     }},
                     {{
-                        ""Sid"": ""GrantAdminAccess"",
+                        ""Sid"": ""GrantS3Access"",
                         ""Action"": [
-                            ""*:*""
+                            ""vpc:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*""
+                    }},
+                    {{
+                        ""Sid"": ""GrantS3Access"",
+                        ""Action"": [
+                            ""s3:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*""
+                    }},
+                    {{
+                        ""Sid"": ""GrantCloudFrontAccess"",
+                        ""Action"": [
+                            ""cloudfront:*""
                         ],
                         ""Effect"": ""Allow"",
                         ""Resource"": ""*"",
                         ""Condition"": {{
                             ""StringEquals"": {{
-                                ""aws:ResourceTag/{resourceTagForEnvironment}"": ""{environment}""
+                                ""aws:ResourceTag/{environmentTagName}"": ""{environment}""
                             }}
                         }}
+                    }},
+                    {{
+                        ""Sid"": ""GrantCloudWatchAccess"",
+                        ""Action"": [
+                            ""cloudwatch:*""
+                        ],
+                        ""Effect"": ""Allow"",
+                        ""Resource"": ""*""
                     }}
                 ]
             }}")
