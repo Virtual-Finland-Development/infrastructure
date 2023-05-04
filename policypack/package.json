@@ -1,6 +1,6 @@
 {
     "name": "aws-typescript",
-    "version": "0.0.1",
+    "version": "0.0.2",
     "dependencies": {
         "@pulumi/aws": "^4.0.0",
         "@pulumi/pulumi": "^3.0.0",
