@@ -1,5 +1,5 @@
 {
-    "name": "aws-typescript",
+    "name": "vfd-aws-policy-pack",
     "version": "0.0.2",
     "dependencies": {
         "@pulumi/aws": "^4.0.0",
