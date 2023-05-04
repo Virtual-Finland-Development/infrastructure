@@ -1,10 +1,7 @@
 using System.Collections.Immutable;
 using Pulumi;
-using Pulumi.Aws.Rds;
-using Pulumi.Aws.Rds.Inputs;
 using Pulumi.Awsx.Ec2;
 using Pulumi.Awsx.Ec2.Inputs;
-using Pulumi.Random;
 using VirtualFinland.Infrastructure.Common;
 
 namespace VirtualFinland.Infrastructure.Stacks;
@@ -14,7 +11,7 @@ public class MainStack : Stack
     public MainStack()
     {
         var config = new Config();
-        
+
         bool isProductionEnvironment = Pulumi.Deployment.Instance.StackName == Environments.Prod.ToString().ToLowerInvariant();
         var environment = Pulumi.Deployment.Instance.StackName;
         var projectName = Pulumi.Deployment.Instance.ProjectName;
@@ -22,10 +19,10 @@ public class MainStack : Stack
         InputMap<string> tags = new InputMap<string>()
         {
             {
-                "Environment", environment
+                "vfd:stack", environment
             },
             {
-                "Project", projectName
+                "vfd:project", projectName
             }
         };
 
