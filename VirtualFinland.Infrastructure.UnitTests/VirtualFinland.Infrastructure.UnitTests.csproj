@@ -20,7 +20,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\VirtualFinland.Infrastructure\VirtualFinland.Infrastructure.csproj" />
+    <ProjectReference
+      Include="..\VirtualFinland.Infrastructure\VirtualFinland.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

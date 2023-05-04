@@ -1,5 +1,4 @@
-﻿using System.Threading.Tasks;
-using Pulumi;
+﻿using Pulumi;
 using VirtualFinland.Infrastructure.Stacks;
 
-return await Deployment.RunAsync<MainStack>();
+return await Deployment.RunAsync<VFDStack>();
