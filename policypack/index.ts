@@ -32,7 +32,7 @@ new PolicyPack("vfd-aws-policy-pack", {
 });
 
 function requireMandatoryTags(tags: any, reportViolation: ReportViolation) {
-  const mandatoryTags = ["Environment", "Project"];
+  const mandatoryTags = ["vfd:stack", "vfd:project"];
 
   if (typeof tags !== "object" || tags === null) {
     reportViolation("Missing tags");
