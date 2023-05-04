@@ -12,7 +12,7 @@ The provisioning happens using a combination of the Pulumi Service and Github Pu
 
 ## Organization policy
 
-The organization policy is defined in the (./policypack)[./policypack] folder. The policy is applied using the Pulumi Policy as Code tool. 
+The organization policy is defined in the [./policypack](./policypack) folder. The policy is applied using the Pulumi Policy as Code tool. 
 
 Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossguard/
 
