@@ -69,7 +69,7 @@ public class KeyRotator
                                 ""aws:ResourceTag/{resourceTagForEnvironment}"": ""{environment}""
                             }}
                         }}
-                    }},
+                    }}
                 ]
             }}")
         });
