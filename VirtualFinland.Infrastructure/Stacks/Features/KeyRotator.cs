@@ -36,6 +36,7 @@ public class KeyRotator
 
         // Resolve AWS account id
         var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
+        var resourceTagForEnvironment = "vfd:stack";
 
         var groupPolicy = new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
@@ -49,50 +50,26 @@ public class KeyRotator
                             ""sts:AssumeRole""
                         ],
                         ""Effect"": ""Allow"",
-                        ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*""
+                        ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*"",
+                        ""Condition"": {{
+                            ""StringEquals"": {{
+                                ""aws:ResourceTag/{resourceTagForEnvironment}"": ""{environment}""
+                            }}
+                        }}
                     }},
                     {{
-                        ""Sid"": ""GrantS3Access"",
+                        ""Sid"": ""GrantAdminAccess"",
                         ""Action"": [
-                            ""s3:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*""
-                    }},
-                    {{
-                        ""Sid"": ""GrantCloudFrontAccess1"",
-                        ""Action"": [
-                            ""cloudfront:*""
+                            ""*:*""
                         ],
                         ""Effect"": ""Allow"",
                         ""Resource"": ""*"",
                         ""Condition"": {{
                             ""StringEquals"": {{
-                                ""aws:ResourceTag/Environment"": ""{environment}""
+                                ""aws:ResourceTag/{resourceTagForEnvironment}"": ""{environment}""
                             }}
                         }}
                     }},
-                    {{
-                        ""Sid"": ""GrantCloudFrontAccess2"",
-                        ""Action"": [
-                            ""cloudfront:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*"",
-                        ""Condition"": {{
-                            ""StringEquals"": {{
-                                ""aws:ResourceTag/vfd:stack"": ""{environment}""
-                            }}
-                        }}
-                    }},
-                    {{
-                        ""Sid"": ""GrantCloudWatchAccess"",
-                        ""Action"": [
-                            ""cloudwatch:*""
-                        ],
-                        ""Effect"": ""Allow"",
-                        ""Resource"": ""*""
-                    }}
                 ]
             }}")
         });
