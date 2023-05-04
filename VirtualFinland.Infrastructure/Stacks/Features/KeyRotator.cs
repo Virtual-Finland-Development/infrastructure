@@ -58,7 +58,7 @@ public class KeyRotator
                         }}
                     }},
                     {{
-                        ""Sid"": ""GrantS3Access"",
+                        ""Sid"": ""GrantVPCAccess"",
                         ""Action"": [
                             ""vpc:*""
                         ],
@@ -163,10 +163,10 @@ public class KeyRotator
         });
 
         // Create / attach to secret manager
-        var secretManagerName = "VirtualFinland.KeyRotator"; // Static value, shared between stacks
+        var secretManagerName = $"VirtualFinland.KeyRotator-{environment}";
         var secretsManager = new Secret(secretManagerName, new()
         {
-            Name = secretManagerName, // Override the hashed pulumi name for a locally referenceable name
+            Name = secretManagerName, // Static reference name for the lambda
             Description = "Github credentials for IAM access key updates",
             Tags = {
                 { "Project", "infrastructure" },
