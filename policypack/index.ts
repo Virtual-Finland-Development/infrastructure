@@ -8,6 +8,9 @@ new PolicyPack("vfd-aws-policy-pack", {
       description: "Enforces the use of mandatory resource tags.",
       enforcementLevel: "mandatory",
       validateResource: [
+        validateResourceOfType(aws.ec2.Instance, (resource, args, reportViolation) => {
+          requireMandatoryTags(resource.tags, reportViolation);
+        }),
         validateResourceOfType(aws.ec2.Vpc, (resource, args, reportViolation) => {
           requireMandatoryTags(resource.tags, reportViolation);
         }),
