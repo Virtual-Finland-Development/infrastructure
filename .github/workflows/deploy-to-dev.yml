@@ -19,14 +19,21 @@ jobs:
         run: make -s -C ./VirtualFinland.KeyRotator build
       - name: Pulumi Configurations Unit Tests
         run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
+      - name: Get IAM role from Pulumi
+        uses: Virtual-Finland-Development/pulumi-outputs-action@v1
+        id: infra-iam-role
+        with:
+          organization: virtualfinland
+          project: infrastructure
+          stack: dev
+          resource: DeployerIAMRole
+          access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
           aws-region: ${{ secrets.AWS_REGION }}
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
-          role-session-name: infrastructure-deploy
+          role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
+          role-session-name: infrastructure-deployer
       - uses: pulumi/actions@v4
         with:
           work-dir: ./VirtualFinland.Infrastructure
