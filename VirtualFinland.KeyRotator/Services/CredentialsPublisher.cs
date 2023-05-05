@@ -10,6 +10,7 @@ class CredentialsPublisher
     private GitHubApi _gitHubApi;
     private readonly string _githubOrganizationName;
     private readonly string _environment;
+    private readonly string _awsRoleToAssume;
 
     public CredentialsPublisher(GitHubApi gitHubApi, Settings settings, ILambdaLogger logger)
     {
@@ -17,6 +18,7 @@ class CredentialsPublisher
         _logger = logger;
         _githubOrganizationName = settings.GitHubOrganizationName;
         _environment = settings.Environment;
+        _awsRoleToAssume = settings.IAMRoleToAssume;
     }
 
     public async Task PublishAccessKey(AccessKey accessKey)
@@ -42,6 +44,14 @@ class CredentialsPublisher
                 _environment,
                 "AWS_SECRET_ACCESS_KEY",
                 accessKey.SecretAccessKey
+            );
+
+            await _gitHubApi.Secrets.CreateOrUpdateEnvironmentSecret(
+                _githubOrganizationName,
+                repository.Id,
+                _environment,
+                "AWS_ROLE_TO_ASSUME",
+                _awsRoleToAssume
             );
         }
 

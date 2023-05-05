@@ -48,8 +48,8 @@ public class VFDStack : Stack
         // Setup key rotator
         var keyRotator = new KeyRotator();
         var botUser = keyRotator.InitializeCICDBotUser(environment, tags);
-        keyRotator.InitializeStackUpdaterRoleAndPolicy(environment, tags);
-        keyRotator.InitializeRotatorLambdaScheduler(botUser, environment, tags);
+        var roleToAssume = keyRotator.InitializeStackUpdaterRoleAndPolicy(environment, tags);
+        keyRotator.InitializeRotatorLambdaScheduler(botUser, roleToAssume, environment, tags);
     }
     [Output] public Output<string> VpcId { get; set; }
 

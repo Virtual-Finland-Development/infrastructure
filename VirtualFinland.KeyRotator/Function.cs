@@ -76,6 +76,7 @@ public class Function
         var inputObject = new Settings()
         {
             IAMUserName = Environment.GetEnvironmentVariable("CICD_BOT_IAM_USER_NAME") ?? string.Empty,
+            IAMRoleToAssume = Environment.GetEnvironmentVariable("CICD_BOT_IAM_ROLE_TO_ASSUME") ?? string.Empty,
             Environment = input.Environment ?? Environment.GetEnvironmentVariable("ENVIRONMENT") ?? string.Empty,
             SecretName = Environment.GetEnvironmentVariable("SECRET_NAME") ?? string.Empty,
             GitHubOrganizationName = input.GitHubOrganizationName ?? Environment.GetEnvironmentVariable("GITHUB_ORGANIZATION_NAME") ?? "Virtual-Finland-Development",
@@ -109,6 +110,7 @@ public class Function
 public record Settings
 {
     public string IAMUserName { get; set; } = string.Empty;
+    public string IAMRoleToAssume { get; set; } = string.Empty;
     public string Environment { get; set; } = string.Empty;
     public string SecretName { get; set; } = string.Empty;
     public string SecretRegion { get; set; } = string.Empty;

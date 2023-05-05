@@ -62,7 +62,7 @@ public class KeyRotator
     /// <TODO>
     /// Would need specific policies for each stack
     /// </TODO>
-    public void InitializeStackUpdaterRoleAndPolicy(string environment, InputMap<string> tags)
+    public Role InitializeStackUpdaterRoleAndPolicy(string environment, InputMap<string> tags)
     {
         var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
 
@@ -121,9 +121,11 @@ public class KeyRotator
             Role = stackUpdaterRole.Name,
             PolicyArn = stackUpdaterPolicy.Arn,
         });
+
+        return stackUpdaterRole;
     }
 
-    public void InitializeRotatorLambdaScheduler(User botUser, string environment, InputMap<string> tags)
+    public void InitializeRotatorLambdaScheduler(User botUser, Role roleToAssume, string environment, InputMap<string> tags)
     {
         //
         // Setup roles and policies
@@ -247,6 +249,7 @@ public class KeyRotator
                 Variables =
                 {
                     { "CICD_BOT_IAM_USER_NAME", botUser.Name },
+                    { "CICD_BOT_IAM_ROLE_TO_ASSUME", roleToAssume.Arn },
                     { "ENVIRONMENT", environment },
                     { "SECRET_NAME", secretManagerName },
                     { "SECRET_REGION", currentRegion },

@@ -21,13 +21,15 @@ jobs:
       - name: Pulumi Configurations Unit Tests
         run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1-node16
-        with: 
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
           aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-      
-      - uses: pulumi/actions@v3
+          role-to-assume: ${{ secrets.AWS_ROLE_TO_ASSUME }}
+          role-session-name: infrastructure-test
+
+      - uses: pulumi/actions@v4
         with:
           work-dir: ./VirtualFinland.Infrastructure
           command: preview
