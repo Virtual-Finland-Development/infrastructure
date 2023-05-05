@@ -34,23 +34,93 @@ public class KeyRotator
             }
         });
 
+        var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
         new GroupPolicy($"cicd-bots-group-policy-{environment}", new GroupPolicyArgs()
         {
             Group = botUserGroup.Name,
-            Policy = $@"{{
+            Policy = currentAwsIdentity.Apply(r => $@"{{
                 ""Version"": ""2012-10-17"",
                 ""Statement"": [
                     {{
-                        ""Sid"": ""GrantAdminAccess"",
-                        ""Action"": ""*"",
+                        ""Sid"": ""GrantRoleAccess"",
+                        ""Action"": [
+                            ""sts:AssumeRole""
+                        ],
                         ""Effect"": ""Allow"",
-                        ""Resource"": ""*""
+                        ""Resource"": ""arn:aws:iam::{r.AccountId}:role/*""
                     }}
                 ]
-            }}"
+            }}")
         });
 
         return botUser;
+    }
+
+    /// <summary>
+    /// Setup role and policy for updating stacks, the role is assumed by the CI/CD bot user
+    /// </summary>
+    /// <TODO>
+    /// Would need specific policies for each stack
+    /// </TODO>
+    public void InitializeStackUpdaterRoleAndPolicy(string environment, InputMap<string> tags)
+    {
+        var currentAwsIdentity = Output.Create(Pulumi.Aws.GetCallerIdentity.InvokeAsync());
+
+        // Temporary role for updating stacks, the control assuming user must be tagged with the same environment
+        var stackUpdaterRole = new Role($"cicd-stack-updater-role-{environment}", new RoleArgs
+        {
+            Description = "Broad role for updating Pulumi stacks",
+            MaxSessionDuration = 30 * 60,
+            AssumeRolePolicy = currentAwsIdentity.Apply(r => $@"{{
+                ""Version"": ""2012-10-17"",
+                ""Statement"": [
+                    {{
+                        ""Sid"": ""GrantBroadRoleAccess"",
+                        ""Action"": ""sts:AssumeRole"",
+                        ""Effect"": ""Allow"",
+                        ""Principal"": {{
+                            ""AWS"": ""arn:aws:iam::{r.AccountId}:root""
+                        }},
+                        ""Condition"": {{
+                            ""StringEquals"": {{
+                                ""aws:PrincipalTag/vfd-stack"": ""{environment}""
+                            }}
+                        }}
+                    }}
+                ]
+            }}"),
+            Tags = tags,
+        });
+
+        // Temporary policy for updating stacks
+        var stackUpdaterPolicy = new Policy($"cicd-stack-updater-policy-{environment}", new PolicyArgs
+        {
+            Description = "Broad policy for updating Pulumi stacks",
+            PolicyDocument = JsonSerializer.Serialize(new Dictionary<string, object?>
+            {
+                { "Version", "2012-10-17" },
+                {
+                    "Statement", new[]
+                    {
+                        new Dictionary<string, object?>
+                        {
+                            { "Sid", "GrantAdminAccess" },
+                            { "Action", "*" },
+                            { "Effect", "Allow" },
+                            { "Resource", "*" }
+                        },
+                    }
+                }
+            }),
+            Tags = tags,
+        });
+
+        // Attach policy to role
+        new RolePolicyAttachment($"cicd-stack-updater-policy-attachment-{environment}", new()
+        {
+            Role = stackUpdaterRole.Name,
+            PolicyArn = stackUpdaterPolicy.Arn,
+        });
     }
 
     public void InitializeRotatorLambdaScheduler(User botUser, string environment, InputMap<string> tags)
