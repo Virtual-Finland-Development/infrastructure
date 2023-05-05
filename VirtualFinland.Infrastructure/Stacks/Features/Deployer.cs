@@ -10,7 +10,7 @@ namespace VirtualFinland.Infrastructure.Stacks.Features;
 //
 public class Deployer
 {
-    public Role InitializeGitHubOICDProvider(string environment, InputMap<string> tags)
+    public Role InitializeGitHubOIDCProvider(string environment, InputMap<string> tags)
     {
         // GitHub OIDC provider configuration
         var githubIssuerUrl = "https://token.actions.githubusercontent.com";
