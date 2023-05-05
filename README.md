@@ -7,7 +7,7 @@ The resource management is done using Infrastructure as Code tools **[Pulumi](ht
 Presently all provisioned are done to AWS and has the following resources:
 
 - [AWS VPC](./VirtualFinland.Infrastructure/Stacks/VFDStack.cs) - Virtual Private Cloud for the project
-- [AWS IAM users and roles, and a key rotator](./VirtualFinland.Infrastructure/Stacks/Features/KeyRotator.cs) - CI/CD-pipeline credentials management
+- [AWS IAM Role & OIDC Provider](./VirtualFinland.Infrastructure/Stacks/Features/Deployer.cs) - CI/CD-pipeline credentials management
 
 ## Infrastructure provisioning
 
@@ -15,9 +15,15 @@ The provisioning happens using a combination of the Pulumi Service and Github Pu
 
 ## Organization policy
 
-The organization policy is defined in the [./policypack](./policypack) folder. The policy is applied using the Pulumi Policy as Code tool. 
+The organization policy is defined in the [./policypack](./policypack) folder. The policy is applied using the Pulumi Policy as Code tool.
 
 Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossguard/
+
+## Resources for CI/CD pipeline authorization
+
+https://github.com/aws-actions/configure-aws-credentials
+https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
+https://www.pulumi.com/registry/packages/aws/api-docs/iam/openidconnectprovider/
 
 ## Development guide
 
