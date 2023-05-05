@@ -47,7 +47,7 @@ public class VFDStack : Stack
 
         // Setup key deployer role
         var deployer = new Deployer();
-        var deployerRole = deployer.InitializeGitHubOICDProvider(environment, tags);
+        var deployerRole = deployer.InitializeGitHubOIDCProvider(environment, tags);
         this.DeployerIAMRole = deployerRole.Arn;
     }
     [Output] public Output<string> VpcId { get; set; }
