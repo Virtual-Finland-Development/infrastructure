@@ -19,11 +19,9 @@ The organization policy is defined in the [./policypack](./policypack) folder. T
 
 Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossguard/
 
-## Resources for CI/CD pipeline authorization
+## CI/CD pipeline authentication
 
-- https://github.com/aws-actions/configure-aws-credentials
-- https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
-- https://www.pulumi.com/registry/packages/aws/api-docs/iam/openidconnectprovider/
+For the CI/CD pipeline to be able to provision resources to AWS, it needs to be authenticated. This is done by using the OpenID Connect (OIDC) provider in AWS IAM. Instructions for setting up the GitHub workflow authentication can be found in the [./README-cicd-setup.md](./README-cicd-setup.md) file.
 
 ## Development guide
 
