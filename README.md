@@ -21,7 +21,9 @@ Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossgu
 
 ## CI/CD pipeline authentication
 
-For the CI/CD pipeline to be able to provision resources to AWS, it needs to be authenticated. This is done by using the OpenID Connect (OIDC) provider in AWS IAM. Instructions for setting up the GitHub workflow authentication can be found in the [./README-cicd-setup.md](./README-cicd-setup.md) file.
+For the CI/CD pipeline to be able to provision resources to AWS, it needs to be authenticated. This is done by using the OpenID Connect (OIDC) provider in AWS IAM.
+
+Instructions for setting up the GitHub workflow can be found in the [./README-cicd-setup.md](./README-cicd-setup.md) file.
 
 ## Development guide
 
