@@ -21,9 +21,9 @@ Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossgu
 
 ## Resources for CI/CD pipeline authorization
 
-https://github.com/aws-actions/configure-aws-credentials
-https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
-https://www.pulumi.com/registry/packages/aws/api-docs/iam/openidconnectprovider/
+- https://github.com/aws-actions/configure-aws-credentials
+- https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
+- https://www.pulumi.com/registry/packages/aws/api-docs/iam/openidconnectprovider/
 
 ## Development guide
 
