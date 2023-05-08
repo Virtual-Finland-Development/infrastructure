@@ -16,15 +16,15 @@ public class Deployer
         var githubConfig = new Config("github");
         var githubOrganization = githubConfig.Require("organization");
         var githubIssuerUrl = githubConfig.Require("oidc-issuer");
-        var githubThumbprints = new List<string> { githubConfig.Require("oidc-thumbprint") }; // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
-        var oidcClientIds = new List<string> { githubConfig.Require("oidc-client-id") };
+        var githubThumbprint = githubConfig.Require("oidc-thumbprint"); // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+        var githubClientId = githubConfig.Require("oidc-client-id");
 
         // Create an OIDC provider for GitHub
         var githubOidcProvider = new OpenIdConnectProvider($"github-oidc-provider-{environment}", new OpenIdConnectProviderArgs
         {
             Url = githubIssuerUrl,
-            ClientIdLists = oidcClientIds,
-            ThumbprintLists = githubThumbprints,
+            ClientIdLists = new List<string> { githubClientId },
+            ThumbprintLists = new List<string> { githubThumbprint },
             Tags = tags
         });
 
@@ -49,8 +49,9 @@ public class Deployer
                         {
                             StringEquals = new Dictionary<string, object>
                             {
+                                { $"{githubIssuerUrl}:aud", githubClientId },
                                 { $"{githubIssuerUrl}:repository_owner", githubOrganization },
-                                { $"{githubIssuerUrl}:environment", $"{environment}" }
+                                { $"{githubIssuerUrl}:environment", environment }
                             }
                         }
                     }
