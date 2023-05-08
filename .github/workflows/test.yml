@@ -3,7 +3,12 @@ name: Run Tests
 on:
   pull_request:
     branches:
-      - main
+      - main  
+
+# These permissions are needed to interact with GitHub's OIDC Token endpoint.
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   pulumi-preview:

@@ -5,6 +5,11 @@ on:
     branches:
       - main
 
+# These permissions are needed to interact with GitHub's OIDC Token endpoint.
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   deploy:
     name: Deploy to AWS dev environment
