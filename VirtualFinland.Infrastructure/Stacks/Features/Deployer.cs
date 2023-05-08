@@ -16,6 +16,7 @@ public class Deployer
         var githubConfig = new Config("github");
         var githubOrganization = githubConfig.Require("organization");
         var githubIssuerUrl = githubConfig.Require("oidc-issuer");
+        var githubIssuerUrlWithoutProtocol = githubIssuerUrl.Replace("https://", "");
         var githubThumbprint = githubConfig.Require("oidc-thumbprint"); // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
         var githubClientId = githubConfig.Require("oidc-client-id");
 
@@ -45,13 +46,14 @@ public class Deployer
                         Action = "sts:AssumeRoleWithWebIdentity",
                         Effect = "Allow",
                         Principal = new { Federated = githubOidcProvider.Arn },
-                        Condition = new
+                        Condition = new Dictionary<string, object>
                         {
-                            StringEquals = new Dictionary<string, object>
-                            {
-                                { $"{githubIssuerUrl}:aud", githubClientId },
-                                { $"{githubIssuerUrl}:repository_owner", githubOrganization },
-                                { $"{githubIssuerUrl}:environment", environment }
+                            { "ForAllValues:StringEquals",  new Dictionary<string, object>
+                                {
+                                    { $"{githubIssuerUrlWithoutProtocol}:aud", githubClientId },
+                                    { $"{githubIssuerUrlWithoutProtocol}:repository_owner", githubOrganization },
+                                    { $"{githubIssuerUrlWithoutProtocol}:environment", environment }
+                                }
                             }
                         }
                     }
