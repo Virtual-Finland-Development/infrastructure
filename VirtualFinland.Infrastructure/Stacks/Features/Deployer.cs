@@ -13,27 +13,28 @@ public class Deployer
     public Role InitializeGitHubOIDCProvider(string environment, InputMap<string> tags)
     {
         // GitHub OIDC provider configuration
-        var githubIssuerUrl = "https://token.actions.githubusercontent.com";
-        // https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
-        var githubThumbprints = new List<string> { "6938FD4D98BAB03FAADB97B34396831E3780AEA1" };
-        var githubOrganization = "Virtual-Finland-Development";
+        var githubConfig = new Config("github");
+        var githubOrganization = githubConfig.Require("organization");
+        var githubIssuerUrl = githubConfig.Require("oidc-issuer");
+        var githubThumbprints = new List<string> { githubConfig.Require("oidc-thumbprint") }; // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+        var oidcClientIds = new List<string> { githubConfig.Require("oidc-client-id") };
 
         // Create an OIDC provider for GitHub
-        var githubOidcProvider = new OpenIdConnectProvider($"githubOidcProvider-{environment}", new OpenIdConnectProviderArgs
+        var githubOidcProvider = new OpenIdConnectProvider($"github-oidc-provider-{environment}", new OpenIdConnectProviderArgs
         {
             Url = githubIssuerUrl,
-            ClientIdLists = new List<string> { "sts.amazonaws.com" },
+            ClientIdLists = oidcClientIds,
             ThumbprintLists = githubThumbprints,
             Tags = tags
         });
 
         // Create an IAM role assumable by the GitHub OIDC provider
-        // https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
-        var githubRole = new Role($"githubRole-{environment}", new RoleArgs
+        // @see: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
+        var githubRole = new Role($"github-oidc-role-{environment}", new RoleArgs
         {
             Description = "Temporary admin role for GitHub Actions",
             Tags = tags,
-            MaxSessionDuration = 30 * 60,
+            MaxSessionDuration = 60 * 60, // 1 hour
             AssumeRolePolicy = Output.JsonSerialize(Output.Create(new
             {
                 Version = "2012-10-17",
@@ -59,7 +60,7 @@ public class Deployer
         });
 
         // Temporary policy for updating stacks
-        var githubStackUpdaterPolicy = new Policy($"githubStackUpdaterPolicy-{environment}", new PolicyArgs
+        var githubStackUpdaterPolicy = new Policy($"github-deployer-policy-{environment}", new PolicyArgs
         {
             Description = "Broad policy for updating Pulumi stacks",
             PolicyDocument = JsonSerializer.Serialize(new Dictionary<string, object?>
@@ -82,7 +83,7 @@ public class Deployer
         });
 
         // Attach policy to role
-        new RolePolicyAttachment($"githubStackUpdaterPolicyAttachment-{environment}", new()
+        new RolePolicyAttachment($"github-deployer-policy-attachment-{environment}", new()
         {
             Role = githubRole.Name,
             PolicyArn = githubStackUpdaterPolicy.Arn,
