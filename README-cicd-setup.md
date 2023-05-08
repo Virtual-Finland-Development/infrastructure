@@ -32,7 +32,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v2
         with:
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-region: eu-north-1
           role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
           role-session-name: infrastructure-test
       ...snip...
@@ -40,8 +40,11 @@ jobs:
 
 Explanation of the steps:
 
-- Get IAM role from Pulumi: This step will get the IAM role ARN from the Pulumi stack output
-- Configure AWS credentials: This step will configure the AWS credentials for the AWS CLI to use the IAM role from the previous step
+- **Get IAM role from Pulumi**: This step will get the IAM role ARN from the Pulumi stack output
+  - uses the [Virtual-Finland-Development/pulumi-outputs-action](https://github.com/Virtual-Finland-Development/pulumi-outputs-action) to retrieve the infrastructure stack output
+- **Configure AWS credentials**: This step will configure the AWS credentials using the IAM role
+  - role-to-assume: This is the IAM role ARN from the previous step
+  - role-session-name: This is used to identify the session in AWS CloudTrail logs
 
 Full example: [./.github/workflows/test.yml](./.github/workflows/test.yml)
 
