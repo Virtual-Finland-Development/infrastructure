@@ -44,7 +44,7 @@ Explanation of the steps:
   - uses the [Virtual-Finland-Development/pulumi-outputs-action](https://github.com/Virtual-Finland-Development/pulumi-outputs-action) to retrieve the infrastructure stack output
 - **Configure AWS credentials**: This step will configure the AWS credentials using the IAM role
   - role-to-assume: This is the IAM role ARN from the previous step
-  - role-session-name: This is used to identify the session in AWS CloudTrail logs
+  - role-session-name: This is used to identify the session in logs
 
 Full example: [./.github/workflows/test.yml](./.github/workflows/test.yml)
 
