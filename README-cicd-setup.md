@@ -2,13 +2,12 @@
 
 This example shows how to configure the github workflow CI/CD pipeline authentication for the project.
 
-Example workflow file: [./.github/workflows/test.yml](./.github/workflows/test.yml)
-
-Relevant parts of the workflow file:
+## Example
 
 Permissions for the github workflow job:
 
 ```yaml
+# These permissions are needed to interact with GitHub's OIDC Token endpoint.
 permissions:
   id-token: write
   contents: read
@@ -43,6 +42,8 @@ Explanation of the steps:
 
 - Get IAM role from Pulumi: This step will get the IAM role ARN from the Pulumi stack output
 - Configure AWS credentials: This step will configure the AWS credentials for the AWS CLI to use the IAM role from the previous step
+
+Full example: [./.github/workflows/test.yml](./.github/workflows/test.yml)
 
 ## Related references
 
