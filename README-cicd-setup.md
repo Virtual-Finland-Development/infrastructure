@@ -42,7 +42,7 @@ Explanation of the steps:
 
 - **Get IAM role from Pulumi**: This step will get the IAM role ARN from the Pulumi stack output
   - uses the [Virtual-Finland-Development/pulumi-outputs-action](https://github.com/Virtual-Finland-Development/pulumi-outputs-action) to retrieve the infrastructure stack output
-- **Configure AWS credentials**: This step will configure the AWS credentials using the IAM role
+- **Configure AWS credentials**: This step will configure the AWS credentials using the [aws-actions/configure-aws-credentials](https://github.com/aws-actions/configure-aws-credentials) action
   - role-to-assume: This is the IAM role ARN from the previous step
   - role-session-name: This is used to identify the session in logs
 
