@@ -49,8 +49,7 @@ public class Deployer
                         {
                             StringEquals = new Dictionary<string, object>
                             {
-                                { $"{githubIssuerUrl}:aud", "sts.amazonaws.com" },
-                                { $"{githubIssuerUrl}:sub", $"repo:{githubOrganization}/*" },
+                                { $"{githubIssuerUrl}:repository_owner", githubOrganization },
                                 { $"{githubIssuerUrl}:environment", $"{environment}" }
                             }
                         }
