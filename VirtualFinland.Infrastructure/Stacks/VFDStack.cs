@@ -45,10 +45,10 @@ public class VFDStack : Stack
         this.PublicSubnetIds = vpc.PublicSubnetIds;
         this.PrivateSubnetIds = vpc.PrivateSubnetIds;
 
-        // Setup key rotator
-        var keyRotator = new KeyRotator();
-        var botUser = keyRotator.InitializeCICDBotUser(environment, tags);
-        keyRotator.InitializeRotatorLambdaScheduler(botUser, environment, tags);
+        // Setup key deployer role
+        var deployer = new Deployer();
+        var deployerRole = deployer.InitializeGitHubOIDCProvider(environment, tags);
+        this.DeployerIAMRole = deployerRole.Arn;
     }
     [Output] public Output<string> VpcId { get; set; }
 
@@ -56,4 +56,5 @@ public class VFDStack : Stack
 
     [Output] public Output<ImmutableArray<string>> PrivateSubnetIds { get; set; }
     [Output] public Output<ImmutableArray<string>> PublicSubnetIds { get; set; }
+    [Output] public Output<string> DeployerIAMRole { get; set; }
 }
