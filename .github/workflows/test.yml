@@ -3,17 +3,15 @@ name: Run Tests
 on:
   pull_request:
     branches:
-      - main  
-
-# These permissions are needed to interact with GitHub's OIDC Token endpoint.
-permissions:
-  id-token: write
-  contents: read
+      - main
 
 jobs:
   pulumi-preview:
     name: Build and test
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-dotnet@v3
@@ -21,21 +19,12 @@ jobs:
           dotnet-version: 6.0.x
       - name: Pulumi Configurations Unit Tests
         run: dotnet test ./VirtualFinland.Infrastructure.UnitTests --no-restore
-      - name: Get IAM role from Pulumi
-        uses: Virtual-Finland-Development/pulumi-outputs-action@v1
-        id: infra-iam-role
-        with:
-          organization: virtualfinland
-          project: infrastructure
-          stack: dev
-          resource: DeployerIAMRole
-          access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: ./.github/actions/configure-aws-credentials
         with:
+          environment: "dev"
           aws-region: ${{ secrets.AWS_REGION }}
-          role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
-          role-session-name: infrastructure-test
+          pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - uses: pulumi/actions@v4
         with:
           work-dir: ./VirtualFinland.Infrastructure
