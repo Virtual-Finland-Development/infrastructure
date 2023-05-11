@@ -4,9 +4,6 @@ inputs:
   environment:
     description: 'Environment where to deploy the stack (dev, staging)'
     required: true
-  stack-name:
-    description: 'Name of the deployment stack'
-    required: true
   pulumi-access-token:
     description: 'Pulumi access token'
     required: true
@@ -30,4 +27,3 @@ runs:
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
-        role-session-name: ${{ inputs.stack-name }}

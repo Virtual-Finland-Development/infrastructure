@@ -26,7 +26,6 @@ jobs:
         uses: ./.github/actions/configure-aws-credentials
         with:
           environment: "dev"
-          stack-name: infrastructure-test
           aws-region: ${{ secrets.AWS_REGION }}
           pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - uses: pulumi/actions@v4
