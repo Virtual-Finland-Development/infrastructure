@@ -1,10 +1,12 @@
 name: Run Tests
 
 on:
+  push:
+    branches:
+      - feat/aws-credentials-github-action
   pull_request:
     branches:
       - main
-      - feat/aws-credentials-github-action
 
 jobs:
   pulumi-preview:
