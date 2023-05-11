@@ -15,6 +15,24 @@ permissions:
 
 Authentication steps:
 
+Using infrastructure repository provided composite action:
+
+```yaml
+jobs:
+  ...snip...
+  steps:
+    ...snip...
+    - name: Configure AWS credentials
+      uses: Virtual-Finland-Development/infrastructure/.github/actions/configure-aws-credentials@main
+      with:
+        environment: ${{ inputs.environment }}
+        aws-region: ${{ secrets.AWS_REGION }}
+        pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
+    ...snip...
+```
+
+Or using the action directly:
+
 ```yaml
 jobs:
   ...snip...
