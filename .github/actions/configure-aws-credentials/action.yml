@@ -15,9 +15,6 @@ inputs:
     required: true
 runs:
   using: "composite"
-  permissions:
-    id-token: write
-    contents: read
   steps:
     - name: Get IAM role from Pulumi
       uses: Virtual-Finland-Development/pulumi-outputs-action@v1
