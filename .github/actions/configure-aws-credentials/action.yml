@@ -27,4 +27,3 @@ runs:
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
-        mask-aws-account-id: false
