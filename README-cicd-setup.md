@@ -13,7 +13,7 @@ permissions:
   contents: read
 ```
 
-Authentication steps:
+**Authentication steps:**
 
 Using infrastructure repository provided composite action:
 
