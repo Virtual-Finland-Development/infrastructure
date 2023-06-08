@@ -10,7 +10,7 @@ namespace VirtualFinland.Infrastructure.Stacks.Features;
 //
 public class Deployer
 {
-    public Role InitializeGitHubOIDCProvider(string environment, InputMap<string> tags)
+    public Role InitializeGitHubOIDCProvider(string environment, Dictionary<string, string> tags, Dictionary<string, string> sharedResourceTags)
     {
         // GitHub OIDC provider configuration
         var githubConfig = new Config("github");
@@ -25,25 +25,26 @@ public class Deployer
         var currentAwsAccount = Pulumi.Aws.GetCallerIdentity.InvokeAsync();
         var currentOidcProviderId = $"arn:aws:iam::{currentAwsAccount.Result.AccountId}:oidc-provider/{githubIssuerUrlWithoutProtocol}";
 
+        // Resolve existing resource with advice from issue: https://github.com/pulumi/pulumi/issues/3364#issuecomment-1267034580
         var githubOidcProvider = null as OpenIdConnectProvider;
-        try
+        var existingOidcProvider = GetOpenidConnectProvider.InvokeAsync(new GetOpenidConnectProviderArgs
         {
-            githubOidcProvider = OpenIdConnectProvider.Get(openIdConnectProviderName, currentOidcProviderId);
-        }
-        catch (System.Exception)
-        {
-            // Ignore
-        }
+            Url = githubIssuerUrl,
+        });
 
-        if (githubOidcProvider == null)
+        if (existingOidcProvider == null)
         {
             githubOidcProvider = new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
             {
                 Url = githubIssuerUrl,
                 ClientIdLists = new List<string> { githubClientId },
                 ThumbprintLists = new List<string> { githubThumbprint },
-                Tags = tags
+                Tags = sharedResourceTags,
             });
+        }
+        else
+        {
+            githubOidcProvider = OpenIdConnectProvider.Get(openIdConnectProviderName, currentOidcProviderId);
         }
 
         // Create an IAM role assumable by the GitHub OIDC provider
