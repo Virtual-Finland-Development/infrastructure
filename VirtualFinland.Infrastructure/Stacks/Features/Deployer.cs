@@ -25,15 +25,26 @@ public class Deployer
         var currentAwsAccount = Pulumi.Aws.GetCallerIdentity.InvokeAsync();
         var currentOidcProviderId = $"arn:aws:iam::{currentAwsAccount.Result.AccountId}:oidc-provider/{githubIssuerUrlWithoutProtocol}";
 
-        // @TODO: fails on preview when the provider does not exist
-        var githubOidcProvider = OpenIdConnectProvider.Get(openIdConnectProviderName, currentOidcProviderId) ??
-            new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
+        var githubOidcProvider = null as OpenIdConnectProvider;
+        try
+        {
+            githubOidcProvider = OpenIdConnectProvider.Get(openIdConnectProviderName, currentOidcProviderId);
+        }
+        catch (System.Exception)
+        {
+            // Ignore
+        }
+
+        if (githubOidcProvider == null)
+        {
+            githubOidcProvider = new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
             {
                 Url = githubIssuerUrl,
                 ClientIdLists = new List<string> { githubClientId },
                 ThumbprintLists = new List<string> { githubThumbprint },
                 Tags = tags
             });
+        }
 
         // Create an IAM role assumable by the GitHub OIDC provider
         // @see: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
