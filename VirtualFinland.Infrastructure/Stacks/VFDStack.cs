@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Pulumi;
 using Pulumi.Awsx.Ec2;
@@ -20,7 +21,7 @@ public class VFDStack : Stack
         var environment = Pulumi.Deployment.Instance.StackName;
         var projectName = Pulumi.Deployment.Instance.ProjectName;
 
-        InputMap<string> tags = new InputMap<string>()
+        var tags = new Dictionary<string, string>()
         {
             {
                 "vfd:stack", environment
@@ -29,6 +30,9 @@ public class VFDStack : Stack
                 "vfd:project", projectName
             }
         };
+
+        var sharedResourceTags = new Dictionary<string, string>(tags) { };
+        sharedResourceTags["vfd:stack"] = "shared";
 
         var vpc = new Vpc($"vf-vpc-{environment}", new VpcArgs()
         {
@@ -47,7 +51,7 @@ public class VFDStack : Stack
 
         // Setup key deployer role
         var deployer = new Deployer();
-        var deployerRole = deployer.InitializeGitHubOIDCProvider(environment, tags);
+        var deployerRole = deployer.InitializeGitHubOIDCProvider(environment, tags, sharedResourceTags);
         this.DeployerIAMRole = deployerRole.Arn;
     }
     [Output] public Output<string> VpcId { get; set; }
