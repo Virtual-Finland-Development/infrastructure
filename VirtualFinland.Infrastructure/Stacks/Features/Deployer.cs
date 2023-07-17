@@ -17,8 +17,9 @@ public class Deployer
         var githubOrganization = githubConfig.Require("organization");
         var githubIssuerUrl = githubConfig.Require("oidc-issuer");
         var githubIssuerUrlWithoutProtocol = githubIssuerUrl.Replace("https://", "");
-        var githubThumbprint = githubConfig.Require("oidc-thumbprint"); // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
-        var githubClientId = githubConfig.Require("oidc-client-id");
+        // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
+        var githubThumbprints = (githubConfig.Get("oidc-thumbprints") ?? throw new KeyNotFoundException("Missing setting: oidc-thumbprints")).Split(",");
+        var githubClientIds = new List<string> { githubConfig.Require("oidc-client-id") };
 
         // Create an OIDC provider for GitHub
         var openIdConnectProviderName = "github-oidc-provider";
@@ -37,8 +38,8 @@ public class Deployer
             githubOidcProvider = new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
             {
                 Url = githubIssuerUrl,
-                ClientIdLists = new List<string> { githubClientId },
-                ThumbprintLists = new List<string> { githubThumbprint },
+                ClientIdLists = githubClientIds,
+                ThumbprintLists = githubThumbprints,
                 Tags = sharedResourceTags,
             });
         }
@@ -68,7 +69,7 @@ public class Deployer
                         {
                             { "ForAllValues:StringEquals",  new Dictionary<string, object>
                                 {
-                                    { $"{githubIssuerUrlWithoutProtocol}:aud", githubClientId },
+                                    { $"{githubIssuerUrlWithoutProtocol}:aud", githubClientIds[0] },
                                     { $"{githubIssuerUrlWithoutProtocol}:repository_owner", githubOrganization },
                                     { $"{githubIssuerUrlWithoutProtocol}:environment", environment }
                                 }
