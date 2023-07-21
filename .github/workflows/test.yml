@@ -4,6 +4,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: Environment where to deploy the stack (dev, staging)
+        type: environment
+        required: false
+        default: dev
+
+env:
+  ENVIRONMENT: ${{ inputs.environment || 'dev' }}
 
 jobs:
   pulumi-preview:
@@ -22,13 +32,13 @@ jobs:
       - name: Configure AWS credentials
         uses: ./.github/actions/configure-aws-credentials
         with:
-          environment: "dev"
+          environment: ${{ env.ENVIRONMENT }}
           aws-region: ${{ secrets.AWS_REGION }}
           pulumi-access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - uses: pulumi/actions@v4
         with:
           work-dir: ./VirtualFinland.Infrastructure
           command: preview
-          stack-name: ${{ secrets.PULUMI_ORGANIZATION }}/dev
+          stack-name: ${{ secrets.PULUMI_ORGANIZATION }}/${{ env.ENVIRONMENT }}
         env:
           PULUMI_ACCESS_TOKEN: ${{ secrets.PULUMI_ACCESS_TOKEN }}
