@@ -1,8 +1,5 @@
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using Pulumi;
-using Pulumi.Awsx.Ec2;
-using Pulumi.Awsx.Ec2.Inputs;
 using VirtualFinland.Infrastructure.Common;
 using VirtualFinland.Infrastructure.Stacks.Features;
 
@@ -34,31 +31,11 @@ public class VFDStack : Stack
         var sharedResourceTags = new Dictionary<string, string>(tags) { };
         sharedResourceTags["vfd:stack"] = "shared";
 
-        var vpc = new Vpc($"vf-vpc-{environment}", new VpcArgs()
-        {
-            Tags = tags,
-            EnableDnsHostnames = true,
-            NatGateways = new NatGatewayConfigurationArgs
-            {
-                Strategy = isProductionEnvironment ? NatGatewayStrategy.OnePerAz : NatGatewayStrategy.Single
-            }
-        });
-
-        this.VpcId = vpc.VpcId;
-        this.VpcName = Output.Create(vpc.GetResourceName());
-        this.PublicSubnetIds = vpc.PublicSubnetIds;
-        this.PrivateSubnetIds = vpc.PrivateSubnetIds;
-
         // Setup key deployer role
         var deployer = new Deployer();
         var deployerRole = deployer.InitializeGitHubOIDCProvider(environment, tags, sharedResourceTags);
         this.DeployerIAMRole = deployerRole.Arn;
     }
-    [Output] public Output<string> VpcId { get; set; }
 
-    [Output] public Output<string> VpcName { get; set; }
-
-    [Output] public Output<ImmutableArray<string>> PrivateSubnetIds { get; set; }
-    [Output] public Output<ImmutableArray<string>> PublicSubnetIds { get; set; }
     [Output] public Output<string> DeployerIAMRole { get; set; }
 }

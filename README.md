@@ -6,7 +6,6 @@ The resource management is done using Infrastructure as Code tools **[Pulumi](ht
 
 Presently all provisioned are done to AWS and has the following resources:
 
-- [AWS VPC](./VirtualFinland.Infrastructure/Stacks/VFDStack.cs) - Virtual Private Cloud for the project
 - [AWS IAM Role & OIDC Provider](./VirtualFinland.Infrastructure/Stacks/Features/Deployer.cs) - CI/CD-pipeline credentials management
 
 ## Infrastructure provisioning
