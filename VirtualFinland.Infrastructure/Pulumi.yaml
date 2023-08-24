@@ -2,6 +2,7 @@ name: infrastructure
 description: Virtual Finland Infrastructure
 runtime: dotnet
 config:
+  aws:region: eu-north-1
   github:organization: Virtual-Finland-Development
   github:oidc-issuer: https://token.actions.githubusercontent.com
   github:oidc-client-id: sts.amazonaws.com
