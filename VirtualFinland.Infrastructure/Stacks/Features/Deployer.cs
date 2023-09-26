@@ -25,14 +25,14 @@ public class Deployer
         var openIdConnectProviderName = "github-oidc-provider";
         var currentAwsAccount = Pulumi.Aws.GetCallerIdentity.InvokeAsync();
         var currentOidcProviderId = $"arn:aws:iam::{currentAwsAccount.Result.AccountId}:oidc-provider/{githubIssuerUrlWithoutProtocol}";
-
-        // Resolve existing resource with advice from issue: https://github.com/pulumi/pulumi/issues/3364#issuecomment-1267034580
-        var githubOidcProvider = null as OpenIdConnectProvider;
         var existingOidcProvider = GetOpenidConnectProvider.InvokeAsync(new GetOpenidConnectProviderArgs
         {
             Url = githubIssuerUrl,
         });
 
+
+        // Resolve existing resource with advice from issue: https://github.com/pulumi/pulumi/issues/3364#issuecomment-1267034580
+        OpenIdConnectProvider? githubOidcProvider;
         if (existingOidcProvider == null)
         {
             githubOidcProvider = new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
@@ -72,6 +72,11 @@ public class Deployer
                                     { $"{githubIssuerUrlWithoutProtocol}:aud", githubClientIds[0] },
                                     { $"{githubIssuerUrlWithoutProtocol}:repository_owner", githubOrganization },
                                     { $"{githubIssuerUrlWithoutProtocol}:environment", environment }
+                                }
+                            },
+                            { "ForAllValues:StringLike",  new Dictionary<string, object>
+                                {
+                                    { $"{githubIssuerUrlWithoutProtocol}:sub", $"repo:{githubOrganization}/*:environment:{environment}" }
                                 }
                             }
                         }
