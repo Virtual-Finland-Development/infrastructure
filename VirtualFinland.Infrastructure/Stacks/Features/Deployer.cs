@@ -76,7 +76,7 @@ public class Deployer
                             },
                             { "ForAllValues:StringLike",  new Dictionary<string, object>
                                 {
-                                    { $"{githubIssuerUrlWithoutProtocol}:sub", $"repo:{githubOrganization}/*:environment:{environment}" }
+                                    { $"{githubIssuerUrlWithoutProtocol}:sub", $"repo:{githubOrganization}/*" }
                                 }
                             }
                         }
