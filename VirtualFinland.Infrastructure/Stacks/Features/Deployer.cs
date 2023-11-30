@@ -1,7 +1,10 @@
 using System.Collections.Generic;
 using System.Text.Json;
+using System.Threading.Tasks;
 using Pulumi;
 using Pulumi.Aws.Iam;
+using Amazon.IdentityManagement.Model;
+using Amazon.IdentityManagement;
 
 namespace VirtualFinland.Infrastructure.Stacks.Features;
 
@@ -10,7 +13,7 @@ namespace VirtualFinland.Infrastructure.Stacks.Features;
 //
 public class Deployer
 {
-    public Role InitializeGitHubOIDCProvider(string environment, Dictionary<string, string> tags, Dictionary<string, string> sharedResourceTags)
+    public async Task<Pulumi.Aws.Iam.Role> InitializeGitHubOIDCProviderAsync(string environment, Dictionary<string, string> tags, Dictionary<string, string> sharedResourceTags)
     {
         // GitHub OIDC provider configuration
         var githubConfig = new Config("github");
@@ -18,23 +21,24 @@ public class Deployer
         var githubIssuerUrl = githubConfig.Require("oidc-issuer");
         var githubIssuerUrlWithoutProtocol = githubIssuerUrl.Replace("https://", "");
         // @see: https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_providers_create_oidc_verify-thumbprint.html
-        var githubThumbprints = (githubConfig.Get("oidc-thumbprints") ?? throw new KeyNotFoundException("Missing setting: oidc-thumbprints")).Split(",");
+        var githubThumbprints = githubConfig.RequireObject<List<string>>("oidc-thumbprints");
         var githubClientIds = new List<string> { githubConfig.Require("oidc-client-id") };
 
         // Create an OIDC provider for GitHub
         var openIdConnectProviderName = "github-oidc-provider";
         var currentAwsAccount = Pulumi.Aws.GetCallerIdentity.InvokeAsync();
         var currentOidcProviderId = $"arn:aws:iam::{currentAwsAccount.Result.AccountId}:oidc-provider/{githubIssuerUrlWithoutProtocol}";
-        var existingOidcProvider = GetOpenidConnectProvider.InvokeAsync(new GetOpenidConnectProviderArgs
-        {
-            Url = githubIssuerUrl,
-        });
 
+        // Check if the OIDC provider already exists
+        var iamClient = new AmazonIdentityManagementServiceClient();
+        var request = new ListOpenIDConnectProvidersRequest();
+        var response = await iamClient.ListOpenIDConnectProvidersAsync(request);
+        var existingOidcProvider = response.OpenIDConnectProviderList.Find(provider => provider.Arn == currentOidcProviderId);
 
-        // Resolve existing resource with advice from issue: https://github.com/pulumi/pulumi/issues/3364#issuecomment-1267034580
         OpenIdConnectProvider? githubOidcProvider;
         if (existingOidcProvider == null)
         {
+            // Create a new OIDC provider
             githubOidcProvider = new OpenIdConnectProvider(openIdConnectProviderName, new OpenIdConnectProviderArgs
             {
                 Url = githubIssuerUrl,
@@ -45,12 +49,13 @@ public class Deployer
         }
         else
         {
+            // Use the existing OIDC provider
             githubOidcProvider = OpenIdConnectProvider.Get(openIdConnectProviderName, currentOidcProviderId);
         }
 
         // Create an IAM role assumable by the GitHub OIDC provider
         // @see: https://docs.github.com/en/actions/deployment/security-hardening-your-deployments/about-security-hardening-with-openid-connect
-        var githubRole = new Role($"github-oidc-role-{environment}", new RoleArgs
+        var githubRole = new Pulumi.Aws.Iam.Role($"github-oidc-role-{environment}", new RoleArgs
         {
             Description = "Temporary admin role for GitHub Actions",
             Tags = tags,
@@ -109,7 +114,7 @@ public class Deployer
         });
 
         // Attach policy to role
-        new RolePolicyAttachment($"github-deployer-policy-attachment-{environment}", new()
+        _ = new RolePolicyAttachment($"github-deployer-policy-attachment-{environment}", new()
         {
             Role = githubRole.Name,
             PolicyArn = githubStackUpdaterPolicy.Arn,
