@@ -1,0 +1,5 @@
+config:
+  ses:domain-name: staging.virtualfinland.dev
+  ses:stack-owned-domains: 
+    - dev:dev.virtualfinland.dev
+    - mvp-staging:staging.virtualfinland.dev
