@@ -26,14 +26,14 @@ public class SimpleEmailService
             foreach (var stackOwnsDomain in stackOwnsDomains)
             {
                 var stackOwnsDomainParts = stackOwnsDomain.Split(':');
-                if (stackOwnsDomainParts.Length != 2)
-                    throw new System.Exception("Invalid stack-owned-domains configuration. Expected format: <stack-name>:<domain-name>");
-
-                _stackOwnsDomains.Add(new StackOwnsDomain
+                if (stackOwnsDomainParts.Length == 2)
                 {
-                    StackName = stackOwnsDomainParts[0],
-                    DomainName = stackOwnsDomainParts[1],
-                });
+                    _stackOwnsDomains.Add(new StackOwnsDomain
+                    {
+                        StackName = stackOwnsDomainParts[0],
+                        DomainName = stackOwnsDomainParts[1],
+                    });
+                }
             }
         }
     }
