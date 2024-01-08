@@ -25,8 +25,8 @@ public class SimpleEmailService
         {
             foreach (var stackOwnsDomain in stackOwnsDomains)
             {
-                var stackOwnsDomainParts = stackOwnsDomain.Split(':');
-                if (stackOwnsDomainParts.Length == 2)
+                var stackOwnsDomainParts = stackOwnsDomain?.Split(':');
+                if (stackOwnsDomainParts != null && stackOwnsDomainParts.Length == 2)
                 {
                     _stackOwnsDomains.Add(new StackOwnsDomain
                     {
