@@ -174,7 +174,7 @@ public class SimpleEmailService
         _ = new Record(setup.NameEnvironmentResource("mail-from-record-verification-mx", stackDomain.StackName), new RecordArgs
         {
             Name = mailFromDomain,
-            Records = { "10 feedback-smtp.eu-north-1.amazonses.com" },
+            Records = { $"10 feedback-smtp.{setup.Region}.amazonses.com" },
             Ttl = 600,
             Type = "MX",
             ZoneId = zoneId,

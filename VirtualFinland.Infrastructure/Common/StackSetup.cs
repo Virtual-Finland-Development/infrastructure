@@ -9,6 +9,7 @@ public class StackSetup
     public string Environment;
     public string ProjectName;
     public string Organization;
+    public string Region;
 
     public Dictionary<string, string> Tags;
 
@@ -34,6 +35,8 @@ public class StackSetup
         {
             ["vfd:stack"] = "shared"
         };
+
+        Region = new Config("aws").Require("region")!;
     }
 
     public string NameResource(string name)
