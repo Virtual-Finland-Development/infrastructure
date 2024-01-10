@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Pulumi;
 using Pulumi.Aws.Route53;
 using Pulumi.Aws.Ses;
+using Pulumi.Aws.Ses.Inputs;
 using VirtualFinland.Infrastructure.Common;
 
 namespace VirtualFinland.Infrastructure.Features;
@@ -43,8 +44,6 @@ public class SimpleEmailService
         if (_domainName == null)
             return null;
 
-        var mailFromDomain = $"{_mailFromSubDomain}.{_domainName}";
-
         var domainIdentity = new DomainIdentity(setup.NameResource("domain-identity"), new DomainIdentityArgs
         {
             Domain = _domainName,
@@ -53,13 +52,21 @@ public class SimpleEmailService
         _ = new MailFrom(setup.NameResource("mail-from-domain"), new MailFromArgs
         {
             Domain = _domainName,
-            MailFromDomain = mailFromDomain,
+            MailFromDomain = $"{_mailFromSubDomain}.{_domainName}",
         });
 
-        // SES Domain Identity Verification
-        _ = new DomainIdentityVerification("sesDomainVerification", new DomainIdentityVerificationArgs
+        _ = new DomainIdentityVerification(setup.NameResource("ses-domain-verification"), new DomainIdentityVerificationArgs
         {
             Domain = domainIdentity.Id,
+        });
+
+        _ = new ConfigurationSet(setup.NameResource("ses-configuration-set"), new ConfigurationSetArgs
+        {
+            Name = "af-ses-configuration-set",
+            DeliveryOptions = new ConfigurationSetDeliveryOptionsArgs
+            {
+                TlsPolicy = "Require",
+            },
         });
 
         return domainIdentity;
@@ -84,7 +91,7 @@ public class SimpleEmailService
         var afStack = new StackReference($"{setup.Organization}/access-finland/{stackDomain.StackName}");
         var zoneIdish = await afStack.GetValueAsync("zoneId");
         if (zoneIdish == null)
-            return;
+            return; // Skip for now, needs a second run after the zone is created in the af stack
         var zoneId = zoneIdish.ToString()!;
 
         // Stack reference from self where the domain identity is created
@@ -96,7 +103,7 @@ public class SimpleEmailService
         var domainIdentity = DomainIdentity.Get("domainIdentity", domainIdentityId);
 
         // Records for mail from domain
-        _ = new Record("mailFromRecordVerificationTxt", new RecordArgs
+        _ = new Record(setup.NameEnvironmentResource("mail-from-record-verification-txt", stackDomain.StackName), new RecordArgs
         {
             Name = mailFromDomain,
             Records = { "\"v=spf1 include:amazonses.com ~all\"" },
@@ -105,7 +112,7 @@ public class SimpleEmailService
             ZoneId = zoneId,
         });
 
-        _ = new Record("mailFromRecordVerificationMx", new RecordArgs
+        _ = new Record(setup.NameEnvironmentResource("mail-from-record-verification-mx", stackDomain.StackName), new RecordArgs
         {
             Name = mailFromDomain,
             Records = { "10 feedback-smtp.eu-north-1.amazonses.com" },
@@ -115,7 +122,7 @@ public class SimpleEmailService
         });
 
         // Create DKIM verifications
-        var domainDkim = new DomainDkim("domainDkim", new DomainDkimArgs
+        var domainDkim = new DomainDkim(setup.NameEnvironmentResource("domain-dkim", stackDomain.StackName), new DomainDkimArgs
         {
             Domain = stackDomain.DomainName,
         });
@@ -125,7 +132,7 @@ public class SimpleEmailService
         {
             for (var i = 0; i < dkimTokens.Length; i++)
             {
-                _ = new Record($"dkimRecordVerification-{dkimTokens[i]}", new RecordArgs
+                _ = new Record(setup.NameEnvironmentResource($"dkim-record-verification-{dkimTokens[i]}", stackDomain.StackName), new RecordArgs
                 {
                     Name = dkimTokens[i],
                     Records = { dkimTokens[i] },
@@ -138,7 +145,7 @@ public class SimpleEmailService
         });
 
         // Create SES verification record
-        var sesRecordVerification = new Record("sesVerificationRecord", new RecordArgs
+        var sesRecordVerification = new Record(setup.NameEnvironmentResource("ses-verification-record", stackDomain.StackName), new RecordArgs
         {
             Name = $"_amazonses.{stackDomain.DomainName}",
             Records = { domainIdentity.VerificationToken },
@@ -148,7 +155,7 @@ public class SimpleEmailService
         });
 
         // Create SPF record
-        var sesSpfRecord = new Record("sesSpfRecord", new RecordArgs
+        var sesSpfRecord = new Record(setup.NameEnvironmentResource("ses-spf-record", stackDomain.StackName), new RecordArgs
         {
             Name = stackDomain.DomainName,
             Records = { "v=spf1 include:amazonses.com ~all" },

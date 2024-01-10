@@ -1,4 +1,5 @@
 
+using System;
 using System.Collections.Generic;
 using Pulumi;
 namespace VirtualFinland.Infrastructure.Common;
@@ -37,6 +38,11 @@ public class StackSetup
 
     public string NameResource(string name)
     {
-        return $"{ProjectName}-{name}-{Environment}";
+        return NameEnvironmentResource(name, Environment);
+    }
+
+    public string NameEnvironmentResource(string name, string environment)
+    {
+        return $"{ProjectName}-{name}-{environment}";
     }
 }
