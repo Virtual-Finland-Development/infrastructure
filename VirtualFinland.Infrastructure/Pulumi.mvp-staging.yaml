@@ -1,6 +1,6 @@
 config:
   ses:domain-name: staging.accessfinland.dev
   ses:domain-owned-by-stack: mvp-staging
-  ses:stack-owned-domains: 
+  ses:this-stack-owns-domains: 
     - dev:dev.accessfinland.dev
     - mvp-staging:staging.accessfinland.dev

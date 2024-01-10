@@ -25,14 +25,14 @@ return await Deployment.RunAsync(async () =>
     {
         ses.SetupDomainIndentity(setup);
         await ses.SetupDomainRecords(setup);
-        await ses.SetupDomainVerification(setup);
+        //await ses.SetupDomainVerification(setup); // TODO: Might not be needed
     }
 
     return new Dictionary<string, object?>
     {
         { "DeployerIAMRole", deployerRole.Arn },
         { "SharedAccessKey", Output.CreateSecret(sharedAccessKey.Result) },
-        { "SesDomainIdentityId", ses.DomainIdentity?.Id },
+        { "SesDomainIdentityVerificationToken", ses.DomainIdentity?.VerificationToken },
         { "DkimTokens", ses.DomainDkim?.DkimTokens },
         { "DnsRecordsCreated", ses.DnsReordsCreated },
     };
