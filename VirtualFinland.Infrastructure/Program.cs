@@ -21,13 +21,19 @@ return await Deployment.RunAsync(async () =>
 
     // Setup SES
     var ses = new SimpleEmailService();
-    var sesDomainIdentity = ses.SetupSes(setup);
-    await ses.SetupSesDomainRecords(setup);
+    if (ses.IsDeployable())
+    {
+        ses.SetupDomainIndentity(setup);
+        await ses.SetupDomainRecords(setup);
+        await ses.SetupDomainVerification(setup);
+    }
 
     return new Dictionary<string, object?>
     {
         { "DeployerIAMRole", deployerRole.Arn },
         { "SharedAccessKey", Output.CreateSecret(sharedAccessKey.Result) },
-        { "SesDomainIdentityId", sesDomainIdentity?.Id }
+        { "SesDomainIdentityId", ses.DomainIdentity?.Id },
+        { "DkimTokens", ses.DomainDkim?.DkimTokens },
+        { "DnsRecordsCreated", ses.DnsReordsCreated },
     };
 });

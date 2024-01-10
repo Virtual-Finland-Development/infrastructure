@@ -10,15 +10,20 @@ namespace VirtualFinland.Infrastructure.Features;
 
 public class SimpleEmailService
 {
-    private readonly string? _domainName;
+    private readonly string _domainName;
     private readonly string _mailFromSubDomain;
     private readonly List<StackOwnsDomain> _stackOwnsDomains = new();
+    private readonly string? _domainOwnedByStack;
+
+    public DomainIdentity? DomainIdentity { get; private set; }
+    public DomainDkim? DomainDkim { get; private set; }
+    public bool DnsReordsCreated { get; private set; } = false;
 
 
     public SimpleEmailService()
     {
         var config = new Config("ses");
-        _domainName = config.Get("domain-name");
+        _domainName = config.Get("domain-name") ?? "";
         _mailFromSubDomain = config.Get("mail-from-sub-domain") ?? "ses";
 
         var stackOwnsDomains = config.GetObject<List<string>>("stack-owned-domains");
@@ -37,14 +42,18 @@ public class SimpleEmailService
                 }
             }
         }
+
+        _domainOwnedByStack = config.Get("domain-owned-by-stack") ?? null;
     }
 
-    public DomainIdentity? SetupSes(StackSetup setup)
+    public bool IsDeployable()
     {
-        if (_domainName == null)
-            return null;
+        return !string.IsNullOrEmpty(_domainName);
+    }
 
-        var domainIdentity = new DomainIdentity(setup.NameResource("domain-identity"), new DomainIdentityArgs
+    public void SetupDomainIndentity(StackSetup setup)
+    {
+        DomainIdentity = new DomainIdentity(setup.NameResource("domain-identity"), new DomainIdentityArgs
         {
             Domain = _domainName,
         });
@@ -55,9 +64,10 @@ public class SimpleEmailService
             MailFromDomain = $"{_mailFromSubDomain}.{_domainName}",
         });
 
-        _ = new DomainIdentityVerification(setup.NameResource("ses-domain-verification"), new DomainIdentityVerificationArgs
+        // Create DKIM verifications
+        DomainDkim = new DomainDkim(setup.NameResource("domain-dkim"), new DomainDkimArgs
         {
-            Domain = domainIdentity.Id,
+            Domain = _domainName,
         });
 
         _ = new ConfigurationSet(setup.NameResource("ses-configuration-set"), new ConfigurationSetArgs
@@ -68,19 +78,37 @@ public class SimpleEmailService
                 TlsPolicy = "Require",
             },
         });
-
-        return domainIdentity;
     }
 
-    public async Task SetupSesDomainRecords(StackSetup setup)
+    public async Task SetupDomainRecords(StackSetup setup)
     {
-        if (_domainName == null)
-            return;
-
         foreach (var stackDomain in _stackOwnsDomains)
         {
             await SetupStackDomain(setup, stackDomain);
         }
+    }
+
+    public async Task SetupDomainVerification(StackSetup setup)
+    {
+        bool recordsReady;
+        if (_domainOwnedByStack == setup.Environment)
+        {
+            recordsReady = DnsReordsCreated;
+        }
+        else
+        {
+            var themsStackRef = new StackReference($"{setup.Organization}/infrastructure/{_domainOwnedByStack}");
+            var dnsRecordsCreated = await themsStackRef.GetValueAsync("DnsReordsCreated");
+            recordsReady = dnsRecordsCreated != null && (bool)dnsRecordsCreated;
+        }
+
+        if (!recordsReady)
+            return;
+
+        _ = new DomainIdentityVerification(setup.NameResource("ses-domain-verification"), new DomainIdentityVerificationArgs
+        {
+            Domain = _domainName,
+        });
     }
 
     private async Task SetupStackDomain(StackSetup setup, StackOwnsDomain stackDomain)
@@ -102,6 +130,11 @@ public class SimpleEmailService
         var domainIdentityId = domainIdentityIdish.ToString()!;
         var domainIdentity = DomainIdentity.Get("domainIdentity", domainIdentityId);
 
+        var dkimTokensRaw = await selfStack.RequireValueAsync("DkimTokens");
+        var dkimTokens = (List<string>)dkimTokensRaw; // There should be a better way to do this
+        if (dkimTokens == null)
+            return;
+
         // Records for mail from domain
         _ = new Record(setup.NameEnvironmentResource("mail-from-record-verification-txt", stackDomain.StackName), new RecordArgs
         {
@@ -121,31 +154,22 @@ public class SimpleEmailService
             ZoneId = zoneId,
         });
 
-        // Create DKIM verifications
-        var domainDkim = new DomainDkim(setup.NameEnvironmentResource("domain-dkim", stackDomain.StackName), new DomainDkimArgs
-        {
-            Domain = stackDomain.DomainName,
-        });
-
         // Create DKIM records
-        domainDkim.DkimTokens.Apply(dkimTokens =>
+        for (var i = 0; i < dkimTokens.Count; i++)
         {
-            for (var i = 0; i < dkimTokens.Length; i++)
+            var dkimToken = dkimTokens[i];
+            _ = new Record(setup.NameEnvironmentResource($"dkim-record-verification-{i}", stackDomain.StackName), new RecordArgs
             {
-                _ = new Record(setup.NameEnvironmentResource($"dkim-record-verification-{dkimTokens[i]}", stackDomain.StackName), new RecordArgs
-                {
-                    Name = dkimTokens[i],
-                    Records = { dkimTokens[i] },
-                    Ttl = 600,
-                    Type = "CNAME",
-                    ZoneId = zoneId,
-                });
-            }
-            return dkimTokens;
-        });
+                Name = dkimToken,
+                Records = { dkimToken },
+                Ttl = 600,
+                Type = "CNAME",
+                ZoneId = zoneId,
+            });
+        }
 
         // Create SES verification record
-        var sesRecordVerification = new Record(setup.NameEnvironmentResource("ses-verification-record", stackDomain.StackName), new RecordArgs
+        _ = new Record(setup.NameEnvironmentResource("ses-verification-record", stackDomain.StackName), new RecordArgs
         {
             Name = $"_amazonses.{stackDomain.DomainName}",
             Records = { domainIdentity.VerificationToken },
@@ -155,7 +179,7 @@ public class SimpleEmailService
         });
 
         // Create SPF record
-        var sesSpfRecord = new Record(setup.NameEnvironmentResource("ses-spf-record", stackDomain.StackName), new RecordArgs
+        _ = new Record(setup.NameEnvironmentResource("ses-spf-record", stackDomain.StackName), new RecordArgs
         {
             Name = stackDomain.DomainName,
             Records = { "v=spf1 include:amazonses.com ~all" },
@@ -163,6 +187,8 @@ public class SimpleEmailService
             Type = "TXT",
             ZoneId = zoneId,
         });
+
+        DnsReordsCreated = true;
     }
 
     private record StackOwnsDomain
