@@ -7,7 +7,7 @@ The resource management is done using Infrastructure as Code tools **[Pulumi](ht
 Presently all provisioned are done to AWS and has the following resources:
 
 - [AWS IAM Role & OIDC Provider](./VirtualFinland.Infrastructure/Stacks/Features/Deployer.cs) - CI/CD-pipeline credentials management
-- [AWS SES](./VirtualFinland.Infrastructure/Stacks/Features/SimpleEmailService.cs) - Email sending
+- [AWS SES](./Docs/Email.README.md) - Email sending
 
 ## Infrastructure provisioning
 
