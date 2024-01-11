@@ -20,3 +20,7 @@ Available settings are:
 - `ses:domain-owned-by-stack`: The stack name that owns the domain name. The stack must be deployed before the SES stack (or the with the same deployment when applicable).
 - `ses:this-stack-owns-other-domains`: List of tuples of stack and domain names that rely on the current stack for domain ownership.
   - the syntax for the list item is `stack-name:domain-name`
+
+## Post-deployment steps
+
+After the SES stack has been deployed, the domain name must be verified by AWS. The verification records should have been created automatically by the stack, but it might take up to 72 hours for the verification to be completed. After the verification, the SES should be upgraded to production use by requesting a production access from AWS. The production access request can be done from the [AWS SES console](https://console.aws.amazon.com/ses/).
