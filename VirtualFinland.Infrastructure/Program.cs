@@ -20,11 +20,11 @@ return await Deployment.RunAsync(async () =>
     });
 
     // Setup SES
-    var ses = new SimpleEmailService();
+    var ses = new SimpleEmailService(setup);
     if (ses.IsDeployable())
     {
-        ses.SetupDomainIndentity(setup);
-        await ses.SetupDomainRecords(setup);
+        ses.SetupDomainIndentity();
+        await ses.SetupDomainRecords();
         //await ses.SetupDomainVerification(setup); // TODO: Might not be needed
     }
 

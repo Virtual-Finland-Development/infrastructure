@@ -1,0 +1,3 @@
+config:
+  ses:domain-name: accessfinland.com
+  ses:domain-owned-by-stack: mvp-production
