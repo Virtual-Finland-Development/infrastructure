@@ -8,7 +8,7 @@ The SES depends on a domain zone being registered in AWS Route53. Currently\* th
 
 There's also a dependency between the different deployment stacks in the project. For example when the domain zone is created in the `mvp-staging` stack, but the `dev` stack also needs to send emails, then the `dev` infrastructure-stack needs to be deployed after the `mvp-staging` stack. 
 
-\* The setup would be easier if the domain zone would be managed in the infrastructure project, but it as the zone is already in use it's to be planned if it's worth the effort to migrate it to the infrastructure project.
+\* The setup would be easier if the domain zone would be managed in the infrastructure project, but as the zone is already in use, it's maybe not worth the effort to migrate it to the infrastructure project.
 
 ## Deployment configuration
 
