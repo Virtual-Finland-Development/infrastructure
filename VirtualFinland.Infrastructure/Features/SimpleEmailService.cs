@@ -33,30 +33,33 @@ public class SimpleEmailService
         _domainZoneId = config.Get("domain-zone-id") ?? null;
         _createDomainRecords = config.GetBoolean("create-domain-records") ?? false;
 
-        var createDomainRecordsFor = config.GetObject<List<string>>("also-create-domain-records-for");
-        if (createDomainRecordsFor != null)
+        if (_createDomainRecords)
         {
-            foreach (var stackOwnsDomain in createDomainRecordsFor)
+            var createDomainRecordsFor = config.GetObject<List<string>>("also-create-domain-records-for");
+            if (createDomainRecordsFor != null)
             {
-                var stackOwnsDomainParts = stackOwnsDomain?.Split(':');
-                if (stackOwnsDomainParts != null && stackOwnsDomainParts.Length == 2)
+                foreach (var stackOwnsDomain in createDomainRecordsFor)
                 {
-                    _createDomainRecordsFor.Add(new StackOwnsDomain
+                    var stackOwnsDomainParts = stackOwnsDomain?.Split(':');
+                    if (stackOwnsDomainParts != null && stackOwnsDomainParts.Length == 2)
                     {
-                        StackName = stackOwnsDomainParts[0],
-                        DomainName = stackOwnsDomainParts[1],
-                    });
+                        _createDomainRecordsFor.Add(new StackOwnsDomain
+                        {
+                            StackName = stackOwnsDomainParts[0],
+                            DomainName = stackOwnsDomainParts[1],
+                        });
+                    }
                 }
             }
-        }
 
-        if (_createDomainRecords && _createDomainRecordsFor.Find(x => x.StackName == setup.Environment) == null)
-        {
-            _createDomainRecordsFor.Add(new StackOwnsDomain
+            if (_createDomainRecordsFor.Find(x => x.StackName == setup.Environment) == null)
             {
-                StackName = setup.Environment,
-                DomainName = _domainName,
-            });
+                _createDomainRecordsFor.Add(new StackOwnsDomain
+                {
+                    StackName = setup.Environment,
+                    DomainName = _domainName,
+                });
+            }
         }
     }
 
