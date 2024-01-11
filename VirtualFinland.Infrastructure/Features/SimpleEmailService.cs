@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Linq;
 using System.Threading.Tasks;
 using Pulumi;
 using Pulumi.Aws.Route53;
@@ -16,8 +17,8 @@ public class SimpleEmailService
     private readonly string? _domainZoneId;
     private readonly string? _domainName;
     private readonly string _mailFromSubDomain;
-    private readonly List<StackOwnsDomain> _stackOwnsDomains = new();
-    private readonly string? _domainOwnedByStack;
+    private readonly bool _createDomainRecords;
+    private readonly List<StackOwnsDomain> _createDomainRecordsFor = new();
 
     public DomainIdentity? DomainIdentity { get; private set; }
     public DomainDkim? DomainDkim { get; private set; }
@@ -29,18 +30,18 @@ public class SimpleEmailService
         var config = new Config("ses");
         _domainName = config.Get("domain-name") ?? "";
         _mailFromSubDomain = config.Get("mail-from-sub-domain") ?? "ses";
-        _domainOwnedByStack = config.Get("domain-owned-by-stack") ?? setup.Environment;
         _domainZoneId = config.Get("domain-zone-id") ?? null;
+        _createDomainRecords = config.GetBoolean("create-domain-records") ?? false;
 
-        var stackOwnsDomains = config.GetObject<List<string>>("this-stack-owns-other-domains");
-        if (stackOwnsDomains != null)
+        var createDomainRecordsFor = config.GetObject<List<string>>("also-create-domain-records-for");
+        if (createDomainRecordsFor != null)
         {
-            foreach (var stackOwnsDomain in stackOwnsDomains)
+            foreach (var stackOwnsDomain in createDomainRecordsFor)
             {
                 var stackOwnsDomainParts = stackOwnsDomain?.Split(':');
                 if (stackOwnsDomainParts != null && stackOwnsDomainParts.Length == 2)
                 {
-                    _stackOwnsDomains.Add(new StackOwnsDomain
+                    _createDomainRecordsFor.Add(new StackOwnsDomain
                     {
                         StackName = stackOwnsDomainParts[0],
                         DomainName = stackOwnsDomainParts[1],
@@ -49,11 +50,11 @@ public class SimpleEmailService
             }
         }
 
-        if (_domainName != null && _domainOwnedByStack == setup.Environment && _stackOwnsDomains.Find(x => x.StackName == _domainOwnedByStack) == null)
+        if (_createDomainRecords && _createDomainRecordsFor.Find(x => x.StackName == setup.Environment) == null)
         {
-            _stackOwnsDomains.Add(new StackOwnsDomain
+            _createDomainRecordsFor.Add(new StackOwnsDomain
             {
-                StackName = _domainOwnedByStack,
+                StackName = setup.Environment,
                 DomainName = _domainName,
             });
         }
@@ -95,7 +96,7 @@ public class SimpleEmailService
 
     public async Task SetupDomainRecords()
     {
-        if (_stackOwnsDomains.Count == 0)
+        if (_createDomainRecordsFor.Count == 0)
         {
             Console.WriteLine("Skipping DNS records: stack does not own domains");
             return;
@@ -126,7 +127,7 @@ public class SimpleEmailService
             return; // Skip for now, needs a second run after the zone is created in the af stack
         }
 
-        foreach (var stackDomain in _stackOwnsDomains)
+        foreach (var stackDomain in _createDomainRecordsFor)
         {
             await SetupStackDomain(stackDomain, zoneId);
         }
@@ -135,23 +136,12 @@ public class SimpleEmailService
     private async Task SetupStackDomain(StackOwnsDomain stackDomain, string zoneId)
     {
         var mailFromDomain = $"{_mailFromSubDomain}.{stackDomain.DomainName}";
-
-        // Stack reference from self where the domain identity is created
-        var selfStack = new StackReference($"{_setup.Organization}/infrastructure/{stackDomain.StackName}");
-        var domainVerificationToken = await selfStack.GetValueAsync("SesDomainIdentityVerificationToken");
-        if (domainVerificationToken == null)
+        var recordTokens = await ResolveStacksDomainRecordTokens(stackDomain.StackName);
+        if (recordTokens == null)
         {
-            Console.WriteLine($"SesDomainIdentityVerificationToken not found for stack {stackDomain.StackName}");
+            Console.WriteLine($"Skipping DNS records: stack {stackDomain.StackName} does not own domain {stackDomain.DomainName}");
             return;
         }
-
-        var dkimTokensRaw = await selfStack.RequireValueAsync("DkimTokens");
-        if (dkimTokensRaw == null)
-        {
-            Console.WriteLine($"DkimTokens not found for stack {stackDomain.StackName}");
-            return;
-        }
-        var dkimTokens = (ImmutableArray<object>)dkimTokensRaw;
 
         // Records for mail from domain
         _ = new Record(_setup.NameEnvironmentResource("mail-from-record-verification-txt", stackDomain.StackName), new RecordArgs
@@ -173,27 +163,35 @@ public class SimpleEmailService
         });
 
         // Create DKIM records
-        for (var i = 0; i < dkimTokens.Length; i++)
+        recordTokens.DkimTokens.Apply(dkimTokens =>
         {
-            var dkimToken = dkimTokens[i] as string;
-            _ = new Record(_setup.NameEnvironmentResource($"dkim-record-verification-{i}", stackDomain.StackName), new RecordArgs
+            for (var i = 0; i < dkimTokens.Length; i++)
             {
-                Name = $"{dkimToken!}._domainkey.{stackDomain.DomainName}",
-                Records = { $"{dkimToken}.dkim.amazonses.com" },
-                Ttl = 600,
-                Type = "CNAME",
-                ZoneId = zoneId,
-            });
-        }
+                var dkimToken = dkimTokens[i] as string;
+                _ = new Record(_setup.NameEnvironmentResource($"dkim-record-verification-{i}", stackDomain.StackName), new RecordArgs
+                {
+                    Name = $"{dkimToken!}._domainkey.{stackDomain.DomainName}",
+                    Records = { $"{dkimToken}.dkim.amazonses.com" },
+                    Ttl = 600,
+                    Type = "CNAME",
+                    ZoneId = zoneId,
+                });
+            }
+            return dkimTokens;
+        });
 
         // Create SES verification record
-        _ = new Record(_setup.NameEnvironmentResource("ses-verification-record", stackDomain.StackName), new RecordArgs
+        recordTokens.DomainVerificationToken.Apply(domainVerificationToken =>
         {
-            Name = $"_amazonses.{stackDomain.DomainName}",
-            Records = { domainVerificationToken.ToString()! },
-            Ttl = 600,
-            Type = "TXT",
-            ZoneId = zoneId,
+            _ = new Record(_setup.NameEnvironmentResource("ses-verification-record", stackDomain.StackName), new RecordArgs
+            {
+                Name = $"_amazonses.{stackDomain.DomainName}",
+                Records = { domainVerificationToken.ToString()! },
+                Ttl = 600,
+                Type = "TXT",
+                ZoneId = zoneId,
+            });
+            return domainVerificationToken;
         });
 
         // Create dmarc record
@@ -207,9 +205,50 @@ public class SimpleEmailService
         });
     }
 
+    private async Task<StackDomainRecordTokens?> ResolveStacksDomainRecordTokens(string stackName)
+    {
+        if (stackName == _setup.Environment)
+        {
+            return new StackDomainRecordTokens
+            {
+                DomainVerificationToken = DomainIdentity!.VerificationToken,
+                DkimTokens = DomainDkim!.DkimTokens,
+            };
+        }
+
+        // Stack reference from self where the domain identity is created
+        var selfStack = new StackReference($"{_setup.Organization}/infrastructure/{stackName}");
+        var domainVerificationToken = await selfStack.GetValueAsync("SesDomainIdentityVerificationToken");
+        if (domainVerificationToken == null)
+        {
+            Console.WriteLine($"SesDomainIdentityVerificationToken not found for stack {stackName}");
+            return null;
+        }
+
+        var dkimTokensRaw = await selfStack.RequireValueAsync("DkimTokens");
+        if (dkimTokensRaw == null)
+        {
+            Console.WriteLine($"DkimTokens not found for stack {stackName}");
+            return null;
+        }
+        var dkimTokens = (ImmutableArray<object>)dkimTokensRaw;
+
+        return new StackDomainRecordTokens
+        {
+            DomainVerificationToken = Output.Create(domainVerificationToken.ToString()!),
+            DkimTokens = Output.Create(dkimTokens.Select(x => x.ToString()!).ToImmutableArray()),
+        };
+    }
+
     private record StackOwnsDomain
     {
         public string DomainName { get; init; } = string.Empty;
         public string StackName { get; init; } = string.Empty;
+    }
+
+    private record StackDomainRecordTokens
+    {
+        public Output<string> DomainVerificationToken { get; init; } = default!;
+        public Output<ImmutableArray<string>> DkimTokens { get; init; } = default!;
     }
 }
