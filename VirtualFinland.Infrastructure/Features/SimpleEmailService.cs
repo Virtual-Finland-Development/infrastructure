@@ -21,7 +21,6 @@ public class SimpleEmailService
 
     public DomainIdentity? DomainIdentity { get; private set; }
     public DomainDkim? DomainDkim { get; private set; }
-    public bool DnsReordsCreated { get; private set; } = false;
 
     public SimpleEmailService(StackSetup setup)
     {
@@ -134,29 +133,6 @@ public class SimpleEmailService
         }
     }
 
-    public async Task SetupDomainVerification()
-    {
-        bool recordsReady;
-        if (_domainOwnedByStack == _setup.Environment)
-        {
-            recordsReady = DnsReordsCreated;
-        }
-        else
-        {
-            var themsStackRef = new StackReference($"{_setup.Organization}/infrastructure/{_domainOwnedByStack}");
-            var dnsRecordsCreated = await themsStackRef.GetValueAsync("DnsReordsCreated");
-            recordsReady = dnsRecordsCreated != null && (bool)dnsRecordsCreated;
-        }
-
-        if (!recordsReady)
-            return;
-
-        _ = new DomainIdentityVerification(_setup.NameResource("ses-domain-verification"), new DomainIdentityVerificationArgs
-        {
-            Domain = _domainName!,
-        });
-    }
-
     private async Task SetupStackDomain(StackOwnsDomain stackDomain, string zoneId)
     {
         var mailFromDomain = $"{_mailFromSubDomain}.{stackDomain.DomainName}";
@@ -230,8 +206,6 @@ public class SimpleEmailService
             Type = "TXT",
             ZoneId = zoneId,
         });
-
-        DnsReordsCreated = true;
     }
 
     private record StackOwnsDomain
