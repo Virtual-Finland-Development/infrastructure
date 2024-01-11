@@ -17,9 +17,10 @@ The principal settings for the email sending service are defined in the pulumi s
 Available settings are:
 
 - `ses:domain-name`: The domain name used for sending emails. The domain name must be registered in AWS Route53.
-- `ses:domain-owned-by-stack`: The stack name that owns the domain name. The stack must be deployed before the SES stack (or the with the same deployment when applicable).
+- `ses:domain-owned-by-stack`: The stack name that owns the domain name. The stack must be deployed before the SES stack (or the with the same deployment when applicable). Assumed to be the current stack if not set.
 - `ses:this-stack-owns-other-domains`: List of tuples of stack and domain names that rely on the current stack for domain ownership.
   - the syntax for the list item is `stack-name:domain-name`
+- `ses:domain-zone-id`: The AWS Route53 zone id for the domain name. If not set, the zone id is fetched from the access-finland projects pulumi outputs.
 
 ## Post-deployment steps
 

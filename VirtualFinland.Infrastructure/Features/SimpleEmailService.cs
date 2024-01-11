@@ -29,7 +29,7 @@ public class SimpleEmailService
         var config = new Config("ses");
         _domainName = config.Get("domain-name") ?? "";
         _mailFromSubDomain = config.Get("mail-from-sub-domain") ?? "ses";
-        _domainOwnedByStack = config.Get("domain-owned-by-stack") ?? null;
+        _domainOwnedByStack = config.Get("domain-owned-by-stack") ?? setup.Environment;
         _domainZoneId = config.Get("domain-zone-id") ?? null;
 
         var stackOwnsDomains = config.GetObject<List<string>>("this-stack-owns-other-domains");
