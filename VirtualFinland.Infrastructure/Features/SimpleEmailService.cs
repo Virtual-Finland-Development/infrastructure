@@ -109,8 +109,7 @@ public class SimpleEmailService
         }
         else
         {
-            var envOverride = _setup.Environment == "dev" ? "mvp-dev" : _setup.Environment;
-            var afStack = new StackReference($"{_setup.Organization}/access-finland/{envOverride}");
+            var afStack = new StackReference($"{_setup.Organization}/access-finland/{_setup.Environment}");
             if (afStack != null)
             {
                 var zoneIdish = await afStack.GetValueAsync("domainZoneId");
