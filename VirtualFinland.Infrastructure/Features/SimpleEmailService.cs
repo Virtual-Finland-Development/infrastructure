@@ -35,6 +35,12 @@ public class SimpleEmailService
 
         if (_createDomainRecords)
         {
+            _createDomainRecordsFor.Add(new StackOwnsDomain
+            {
+                StackName = setup.Environment,
+                DomainName = _domainName,
+            });
+
             var createDomainRecordsFor = config.GetObject<List<string>>("also-create-domain-records-for");
             if (createDomainRecordsFor != null)
             {
@@ -43,6 +49,9 @@ public class SimpleEmailService
                     var stackOwnsDomainParts = stackOwnsDomain?.Split(':');
                     if (stackOwnsDomainParts != null && stackOwnsDomainParts.Length == 2)
                     {
+                        if (stackOwnsDomainParts[0] == setup.Environment)
+                            throw new ArgumentException($"The current stack {setup.Environment} can't be defined in the ses:also-create-domain-records-for list");
+
                         _createDomainRecordsFor.Add(new StackOwnsDomain
                         {
                             StackName = stackOwnsDomainParts[0],
@@ -50,15 +59,6 @@ public class SimpleEmailService
                         });
                     }
                 }
-            }
-
-            if (_createDomainRecordsFor.Find(x => x.StackName == setup.Environment) == null)
-            {
-                _createDomainRecordsFor.Add(new StackOwnsDomain
-                {
-                    StackName = setup.Environment,
-                    DomainName = _domainName,
-                });
             }
         }
     }
