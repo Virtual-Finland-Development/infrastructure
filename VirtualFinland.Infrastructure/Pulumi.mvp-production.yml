@@ -1,0 +1,3 @@
+config:
+  ses:domain-name: accessfinland.com
+  ses:create-domain-records: true

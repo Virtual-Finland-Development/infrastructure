@@ -1,0 +1,5 @@
+config:
+  ses:domain-name: staging.accessfinland.dev
+  ses:create-domain-records: true
+  ses:also-create-domain-records-for: 
+    - dev:dev.accessfinland.dev

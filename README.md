@@ -6,7 +6,8 @@ The resource management is done using Infrastructure as Code tools **[Pulumi](ht
 
 Presently all provisioned are done to AWS and has the following resources:
 
-- [AWS IAM Role & OIDC Provider](./VirtualFinland.Infrastructure/Stacks/Features/Deployer.cs) - CI/CD-pipeline credentials management
+- [AWS IAM Role & OIDC Provider](./VirtualFinland.Infrastructure/Features/Deployer.cs) - CI/CD-pipeline credentials management
+- [AWS SES](./Docs/README.email-setup.md) - Email sending
 
 ## Infrastructure provisioning
 
@@ -22,7 +23,7 @@ Read more about the policy tool here: https://www.pulumi.com/docs/guides/crossgu
 
 For the CI/CD pipeline to be able to provision resources to AWS, it needs to be authenticated. This is done by using the OpenID Connect (OIDC) provider in AWS IAM.
 
-Instructions for setting up the GitHub workflow can be found in the [./README-cicd-setup.md](./README-cicd-setup.md) file.
+Instructions for setting up the GitHub workflow can be found in the [./Docs/README-cicd-setup.md](./Docs/README-cicd-setup.md) file.
 
 ## Development guide
 
