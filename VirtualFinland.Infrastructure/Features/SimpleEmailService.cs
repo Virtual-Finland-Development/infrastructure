@@ -14,6 +14,7 @@ namespace VirtualFinland.Infrastructure.Features;
 public class SimpleEmailService
 {
     private readonly StackSetup _setup;
+    private readonly bool _isEnabled;
     private readonly string? _domainZoneId;
     private readonly string? _domainName;
     private readonly string _mailFromSubDomain;
@@ -28,6 +29,7 @@ public class SimpleEmailService
         _setup = setup;
 
         var config = new Config("ses");
+        _isEnabled = config.GetBoolean("enabled") ?? false;
         _domainName = config.Get("domain-name") ?? "";
         _mailFromSubDomain = config.Get("mail-from-sub-domain") ?? "ses";
         _domainZoneId = config.Get("domain-zone-id") ?? null;
@@ -65,7 +67,7 @@ public class SimpleEmailService
 
     public bool IsDeployable()
     {
-        return !string.IsNullOrEmpty(_domainName);
+        return _isEnabled && !string.IsNullOrEmpty(_domainName);
     }
 
     public void SetupDomainIndentity()
