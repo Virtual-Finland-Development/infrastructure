@@ -16,6 +16,7 @@ The principal settings for the email sending service are defined in the pulumi s
 
 Available settings are:
 
+- `ses:enabled`: Boolean value that defines if the SES is deployed for the current stack or not.
 - `ses:domain-name`: The domain name used for sending emails. The domain name must be registered in AWS Route53.
 - `ses:create-domain-records`: Boolean value that defines if the stack is responsible for creating the domain verification records in AWS Route53. If set to false, the domain verification records must be created manually or by some other stack (which owns the domain).
 - `ses:also-create-domain-records-for`: List of tuples of stack and domain names that rely on the current stack for domain records creation and management.
