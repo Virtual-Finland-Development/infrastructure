@@ -22,7 +22,7 @@ jobs:
     environment: ${{ inputs.environment }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v3
         with:
           dotnet-version: 6.0.x
@@ -38,12 +38,12 @@ jobs:
           resource: DeployerIAMRole
           access-token: ${{ secrets.PULUMI_ACCESS_TOKEN }}
       - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v2
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ secrets.AWS_REGION }}
           role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
           role-session-name: infrastructure-deployer
-      - uses: pulumi/actions@v4
+      - uses: pulumi/actions@v5
         with:
           work-dir: ./VirtualFinland.Infrastructure
           command: up
