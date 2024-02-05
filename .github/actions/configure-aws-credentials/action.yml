@@ -14,7 +14,7 @@ runs:
   using: "composite"
   steps:
     - name: Get IAM role from Pulumi
-      uses: Virtual-Finland-Development/pulumi-outputs-action@v1
+      uses: Virtual-Finland-Development/pulumi-outputs-action@v2
       id: infra-iam-role
       with:
         organization: virtualfinland
@@ -23,7 +23,7 @@ runs:
         resource: DeployerIAMRole
         access-token: ${{ inputs.pulumi-access-token }}
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v2
+      uses: aws-actions/configure-aws-credentials@v4
       with:
         aws-region: ${{ inputs.aws-region }}
         role-to-assume: ${{ steps.infra-iam-role.outputs.resource-output }}
